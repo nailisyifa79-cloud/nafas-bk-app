@@ -9,26 +9,6 @@
     <style>
         * { margin:0; padding:0; box-sizing:border-box; }
         body { font-family:'Inter',sans-serif; background:#f0f4f8; color:#1a202c; min-height:100vh; }
-        #licenseOverlay { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.8); display:flex; align-items:center; justify-content:center; z-index:9999; padding:20px; }
-        #licenseOverlay.hidden { display:none; }
-        .license-card { background:#fff; border-radius:20px; padding:40px; max-width:440px; width:100%; box-shadow:0 40px 80px rgba(0,0,0,0.3); }
-        .license-card .logo { text-align:center; font-size:48px; margin-bottom:8px; }
-        .license-card h2 { text-align:center; font-size:20px; font-weight:800; color:#1a202c; }
-        .license-card .sub { text-align:center; color:#718096; font-size:13px; margin-bottom:20px; }
-        .license-card .form-group { margin-bottom:14px; }
-        .license-card label { display:block; font-weight:600; font-size:12px; color:#4a5568; margin-bottom:4px; }
-        .license-card input { width:100%; padding:12px 14px; border:2px solid #e2e8f0; border-radius:10px; font-size:14px; font-family:'Inter',sans-serif; }
-        .license-card input:focus { outline:none; border-color:#667eea; }
-        .btn-license { width:100%; padding:14px; border:none; border-radius:10px; font-weight:700; font-size:15px; cursor:pointer; font-family:'Inter',sans-serif; background:linear-gradient(135deg,#1a2a6c,#b21f1f); color:#fff; margin-top:6px; }
-        .btn-license:hover { transform:translateY(-2px); }
-        .license-card .error-msg { padding:12px; background:#fef2f2; border-radius:8px; color:#dc2626; font-size:13px; margin-top:10px; display:none; }
-        .license-card .error-msg.show { display:block; }
-        .license-card .success-msg { padding:12px; background:#f0fdf4; border-radius:8px; color:#16a34a; font-size:13px; margin-top:10px; display:none; }
-        .license-card .success-msg.show { display:block; }
-        .license-card .info { text-align:center; font-size:11px; color:#a0aec0; margin-top:14px; }
-        
-        #appContainer { display:none; }
-        #appContainer.active { display:block; }
         
         .header-app { background:linear-gradient(135deg,#1a2a6c,#b21f1f); padding:16px 24px; position:sticky; top:0; z-index:100; }
         .header-app .wrap { max-width:1200px; margin:0 auto; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; }
@@ -38,7 +18,6 @@
         .header-app .brand span { font-size:11px; opacity:0.8; }
         .header-app .user-info { color:#fff; font-size:12px; display:flex; align-items:center; gap:10px; }
         .header-app .user-info .badge { background:rgba(255,255,255,0.2); padding:4px 12px; border-radius:20px; font-size:10px; }
-        .btn-logout { background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.2); color:#fff; padding:6px 14px; border-radius:8px; cursor:pointer; font-size:11px; font-family:'Inter',sans-serif; }
         
         .nav-app { max-width:1200px; margin:0 auto; padding:12px 24px 0; display:flex; gap:6px; flex-wrap:wrap; }
         .nav-app button { background:#fff; border:2px solid #e2e8f0; border-radius:10px; padding:8px 16px; font-weight:600; font-size:12px; cursor:pointer; font-family:'Inter',sans-serif; display:flex; align-items:center; gap:6px; color:#4a5568; }
@@ -79,280 +58,147 @@
         .notif-error { background:#fef2f2; color:#dc2626; border:1px solid #fca5a5; }
         .notif-info { background:#eff6ff; color:#2563eb; border:1px solid #93c5fd; }
         
-        @media (max-width:600px) { .license-card { padding:24px; } .nav-app button { font-size:11px; padding:6px 12px; } .card-app { padding:16px; } .share-row { flex-direction:column; } .share-row input { width:100%; } }
+        /* Print Styles */
+        .print-sheet { background:#fff; padding:12px; border:1px solid #e2e8f0; border-radius:8px; font-size:11px; }
+        .print-sheet .print-head { text-align:center; border-bottom:2px solid #1a2a6c; padding-bottom:8px; margin-bottom:8px; }
+        .print-sheet .print-head h1 { font-size:16px; color:#1a2a6c; }
+        .print-sheet .print-head h2 { font-size:13px; color:#4a5568; }
+        .print-sheet .print-meta { display:flex; justify-content:space-between; font-size:10px; margin-top:4px; flex-wrap:wrap; }
+        .print-sheet .print-q { border:1px solid #e2e8f0; border-radius:6px; padding:6px; margin:4px 0; page-break-inside:avoid; }
+        .print-sheet .print-q h3 { font-size:11px; margin:0 0 2px; color:#1a2a6c; }
+        .print-sheet .print-q .line { font-size:9px; margin:2px 0; min-height:14px; border-bottom:1px dotted #e2e8f0; padding-bottom:2px; }
+        .print-sheet .print-footer { text-align:center; font-size:7px; color:#a0aec0; margin-top:6px; border-top:1px solid #e2e8f0; padding-top:4px; }
+        .print-sheet .print-instruction { font-size:9px; background:#f8fafc; padding:6px; border-radius:4px; margin-bottom:6px; }
+        
+        @media print { .header-app, .nav-app, .actions, .no-print { display:none !important; } .main-app { padding:0 !important; } .card-app { box-shadow:none !important; border:1px solid #e2e8f0 !important; padding:16px !important; page-break-inside:avoid; } @page { margin:8mm; } }
+        @media (max-width:600px) { .nav-app button { font-size:11px; padding:6px 12px; } .card-app { padding:16px; } .share-row { flex-direction:column; } .share-row input { width:100%; } }
     </style>
 </head>
 <body>
 
-<!-- LAYAR AKTIVASI LISENSI -->
-<div id="licenseOverlay">
-    <div class="license-card">
-        <div class="logo">🌟</div>
-        <h2>SOSIO DIGITAL NaFaS BK</h2>
-        <p class="sub">Aktivasi Lisensi — 1 Lisensi untuk 1 Guru</p>
-        
-        <div class="form-group">
-            <label>Nama Guru BK</label>
-            <input id="licenseName" placeholder="Nama lengkap Anda" value="Naili">
+<!-- APLIKASI UTAMA - LANGSUNG AKTIF TANPA AKTIVASI -->
+<div id="appContainer" style="display:block;">
+
+<header class="header-app">
+    <div class="wrap">
+        <div class="brand">
+            <i class="fas fa-brain"></i>
+            <div><h1>SOSIO DIGITAL NaFaS BK</h1><span>Peta Pertemanan • Kolaborasi • Kepemimpinan</span></div>
         </div>
-        <div class="form-group">
-            <label>Asal Sekolah</label>
-            <input id="licenseSchool" placeholder="Nama sekolah" value="SMKN 3">
+        <div class="user-info">
+            <span id="userNameDisplay">Guru BK</span>
+            <span class="badge"><i class="fas fa-check-circle"></i> Aktif</span>
         </div>
-        <div class="form-group">
-            <label>Kode Lisensi</label>
-            <input id="licenseCode" placeholder="Contoh: TEST-NFS-001" value="TEST-NFS-001">
+    </div>
+</header>
+
+<nav class="nav-app">
+    <button id="navTeacher" class="active" onclick="showPage('teacher')"><i class="fas fa-chalkboard-teacher"></i> Guru BK</button>
+    <button id="navStudent" onclick="showPage('student')"><i class="fas fa-mobile-alt"></i> Mode HP</button>
+    <button id="navPaper" onclick="showPage('paper')"><i class="fas fa-file-alt"></i> Mode Kertas</button>
+    <button id="navResult" onclick="showPage('result')"><i class="fas fa-chart-bar"></i> Hasil</button>
+</nav>
+
+<div class="main-app" id="mainApp">
+    
+    <!-- HALAMAN GURU BK -->
+    <div id="pageTeacher">
+        <div class="card-app">
+            <div class="title"><i class="fas fa-plus-circle"></i> Buat Sesi Sosiometri</div>
+            <div class="grid-form">
+                <div class="form-group"><label>Sekolah</label><input id="school" placeholder="Nama sekolah" value="SMKN 3"></div>
+                <div class="form-group"><label>Kelas</label><input id="className" placeholder="Contoh: 9A" value="X TKPI 2"></div>
+                <div class="form-group"><label>Tahun Ajaran</label><input id="year" value="2026/2027"></div>
+                <div class="form-group"><label>Guru BK</label><input id="counselor" placeholder="Nama Guru BK" value="Naili"></div>
+            </div>
+            <div class="form-group">
+                <label>Daftar Nama Siswa (satu nama per baris)</label>
+                <textarea id="students" placeholder="Aisyah Putri&#10;Bima Aditya&#10;Citra Kirana">SYAFIQ IRWANSYAH PUTRA RIADI
+YANUAR ADE FAUZZA
+ZALFA RADIANSYAH
+ZILAN RIFQI ALBAR</textarea>
+            </div>
+            <div class="actions no-print">
+                <button class="btn btn-success" onclick="createSession()"><i class="fas fa-save"></i> Buat Sesi</button>
+            </div>
+            <div id="teacherMsg"></div>
         </div>
         
-        <button class="btn-license" onclick="activateLicense()">
-            <i class="fas fa-unlock"></i> Aktivasi Aplikasi
-        </button>
-        
-        <div id="licenseError" class="error-msg"></div>
-        <div id="licenseSuccess" class="success-msg"></div>
-        
-        <div class="info"><i class="fas fa-shield-alt"></i> Lisensi khusus untuk 1 Guru BK.</div>
+        <div class="card-app">
+            <div class="title"><i class="fas fa-rocket"></i> Sesi Aktif</div>
+            <div id="sessionDisplay">Belum ada sesi. Buat sesi di atas.</div>
+        </div>
+    </div>
+    
+    <!-- HALAMAN SISWA -->
+    <div id="pageStudent" class="hidden">
+        <div class="card-app">
+            <div class="title"><i class="fas fa-mobile-alt"></i> Pengisian Siswa</div>
+            <div class="notif notif-warning"><i class="fas fa-lock"></i> Hasil hanya dapat dilihat Guru BK.</div>
+            <div class="form-group"><label>Kode Sesi</label><input id="studentCode" placeholder="Masukkan kode dari Guru BK"></div>
+            <div class="form-group"><label>Nama Kamu</label><select id="studentName"></select></div>
+            <div id="studentQuestions"></div>
+            <div class="actions no-print">
+                <button class="btn btn-primary" onclick="submitStudent()"><i class="fas fa-paper-plane"></i> Kirim Jawaban</button>
+            </div>
+            <div id="studentMsg"></div>
+        </div>
+    </div>
+    
+    <!-- HALAMAN KERTAS -->
+    <div id="pagePaper" class="hidden">
+        <div class="card-app">
+            <div class="title"><i class="fas fa-file-alt"></i> Mode Tanpa HP</div>
+            <div class="notif notif-info"><i class="fas fa-info-circle"></i> Siswa mengisi lembar kertas, Guru memasukkan hasilnya di sini.</div>
+            <div id="paperEntries"></div>
+            <div class="actions no-print">
+                <button class="btn btn-outline" onclick="loadPaperEntries()"><i class="fas fa-sync"></i> Muat Entri</button>
+                <button class="btn btn-success" onclick="submitPaperEntries()"><i class="fas fa-cloud-upload-alt"></i> Simpan Semua</button>
+            </div>
+            <div id="paperMsg"></div>
+        </div>
+        <div class="card-app">
+            <div class="title"><i class="fas fa-print"></i> Lembar Sosiometri</div>
+            <div id="paperPrintSheet"></div>
+            <div class="actions no-print">
+                <button class="btn btn-warning" onclick="printSheet()"><i class="fas fa-print"></i> Cetak Lembar</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- HALAMAN HASIL -->
+    <div id="pageResult" class="hidden">
+        <div class="card-app">
+            <div class="title"><i class="fas fa-chart-bar"></i> Hasil Sosiometri</div>
+            <div class="grid-form">
+                <div class="form-group"><label>Kode Sesi</label><input id="resultCode"></div>
+                <div class="form-group"><label>PIN Guru BK</label><input id="resultPin"></div>
+            </div>
+            <div class="actions no-print">
+                <button class="btn btn-primary" onclick="viewResults()"><i class="fas fa-unlock"></i> Buka Hasil</button>
+                <button class="btn btn-dark" onclick="printResults()"><i class="fas fa-print"></i> Cetak Hasil</button>
+            </div>
+            <div id="resultDisplay"></div>
+        </div>
     </div>
 </div>
 
-<!-- APLIKASI UTAMA -->
-<div id="appContainer">
-    <header class="header-app">
-        <div class="wrap">
-            <div class="brand">
-                <i class="fas fa-brain"></i>
-                <div><h1>SOSIO DIGITAL NaFaS BK</h1><span>Peta Pertemanan • Kolaborasi • Kepemimpinan</span></div>
-            </div>
-            <div class="user-info">
-                <span id="userNameDisplay">—</span>
-                <span class="badge"><i class="fas fa-check-circle"></i> Licensed</span>
-                <button class="btn-logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Keluar</button>
-            </div>
-        </div>
-    </header>
-    
-    <nav class="nav-app">
-        <button id="navTeacher" class="active" onclick="showPage('teacher')"><i class="fas fa-chalkboard-teacher"></i> Guru BK</button>
-        <button id="navStudent" onclick="showPage('student')"><i class="fas fa-mobile-alt"></i> Mode HP</button>
-        <button id="navPaper" onclick="showPage('paper')"><i class="fas fa-file-alt"></i> Mode Kertas</button>
-        <button id="navResult" onclick="showPage('result')"><i class="fas fa-chart-bar"></i> Hasil</button>
-    </nav>
-    
-    <div class="main-app" id="mainApp">
-        <!-- HALAMAN GURU BK -->
-        <div id="pageTeacher">
-            <div class="card-app">
-                <div class="title"><i class="fas fa-plus-circle"></i> Buat Sesi Sosiometri</div>
-                <div class="grid-form">
-                    <div class="form-group"><label>Sekolah</label><input id="school" placeholder="Nama sekolah"></div>
-                    <div class="form-group"><label>Kelas</label><input id="className" placeholder="Contoh: 9A"></div>
-                    <div class="form-group"><label>Tahun Ajaran</label><input id="year" value="2026/2027"></div>
-                    <div class="form-group"><label>Guru BK</label><input id="counselor" placeholder="Nama Guru BK"></div>
-                </div>
-                <div class="form-group">
-                    <label>Daftar Nama Siswa (satu nama per baris)</label>
-                    <textarea id="students" placeholder="Aisyah Putri&#10;Bima Aditya&#10;Citra Kirana"></textarea>
-                </div>
-                <div class="actions no-print">
-                    <button class="btn btn-success" onclick="createSession()"><i class="fas fa-save"></i> Buat Sesi</button>
-                </div>
-                <div id="teacherMsg"></div>
-            </div>
-            <div class="card-app">
-                <div class="title"><i class="fas fa-rocket"></i> Sesi Aktif</div>
-                <div id="sessionDisplay">Belum ada sesi.</div>
-            </div>
-        </div>
-        
-        <!-- HALAMAN SISWA -->
-        <div id="pageStudent" class="hidden">
-            <div class="card-app">
-                <div class="title"><i class="fas fa-mobile-alt"></i> Pengisian Siswa</div>
-                <div class="notif notif-warning"><i class="fas fa-lock"></i> Hasil hanya dapat dilihat Guru BK.</div>
-                <div class="form-group"><label>Kode Sesi</label><input id="studentCode" placeholder="Masukkan kode dari Guru BK"></div>
-                <div class="form-group"><label>Nama Kamu</label><select id="studentName"></select></div>
-                <div id="studentQuestions"></div>
-                <div class="actions no-print">
-                    <button class="btn btn-primary" onclick="submitStudent()"><i class="fas fa-paper-plane"></i> Kirim Jawaban</button>
-                </div>
-                <div id="studentMsg"></div>
-            </div>
-        </div>
-        
-        <!-- HALAMAN KERTAS -->
-        <div id="pagePaper" class="hidden">
-            <div class="card-app">
-                <div class="title"><i class="fas fa-file-alt"></i> Mode Tanpa HP</div>
-                <div class="notif notif-info"><i class="fas fa-info-circle"></i> Siswa mengisi lembar kertas, Guru memasukkan hasilnya di sini.</div>
-                <div id="paperEntries"></div>
-                <div class="actions no-print">
-                    <button class="btn btn-outline" onclick="loadPaperEntries()"><i class="fas fa-sync"></i> Muat Entri</button>
-                    <button class="btn btn-success" onclick="submitPaperEntries()"><i class="fas fa-cloud-upload-alt"></i> Simpan Semua</button>
-                </div>
-                <div id="paperMsg"></div>
-            </div>
-            <div class="card-app">
-                <div class="title"><i class="fas fa-print"></i> Lembar Sosiometri</div>
-                <div id="paperPrintSheet"></div>
-                <div class="actions no-print">
-                    <button class="btn btn-warning" onclick="printSheet()"><i class="fas fa-print"></i> Cetak Lembar</button>
-                </div>
-            </div>
-        </div>
-        
-        <!-- HALAMAN HASIL -->
-        <div id="pageResult" class="hidden">
-            <div class="card-app">
-                <div class="title"><i class="fas fa-chart-bar"></i> Hasil Sosiometri</div>
-                <div class="grid-form">
-                    <div class="form-group"><label>Kode Sesi</label><input id="resultCode"></div>
-                    <div class="form-group"><label>PIN Guru BK</label><input id="resultPin"></div>
-                </div>
-                <div class="actions no-print">
-                    <button class="btn btn-primary" onclick="viewResults()"><i class="fas fa-unlock"></i> Buka Hasil</button>
-                    <button class="btn btn-dark" onclick="printResults()"><i class="fas fa-print"></i> Cetak Hasil</button>
-                </div>
-                <div id="resultDisplay"></div>
-            </div>
-        </div>
-    </div>
 </div>
 
 <script>
 // ============================================================
-// 🔑 DAFTAR KODE LISENSI VALID
+// APLIKASI LANGSUNG AKTIF - TANPA AKTIVASI
 // ============================================================
 
-const VALID_LICENSES = [
-    'TEST-NFS-001',
-    'NFS-D6QG-98EH',
-    'NFS-TJUL-6MJN',
-    'NFS-W7HS-YEQZ',
-    'NFS-CBNL-ZP4Z',
-    'NFS-WM6B-HCR6',
-    'NFS-S3RE-544C',
-    'NFS-V4QG-99P2',
-    'NFS-9RKW-YAV6',
-    'NFS-FWYK-D7SJ',
-    'NFS-DYNH-77MD'
-];
-
-// Kode yang sudah terpakai
-let USED_LICENSES = [];
-
-// Muat dari localStorage
-try {
-    const saved = localStorage.getItem('NAFAS_USED_LICENSES');
-    if (saved) USED_LICENSES = JSON.parse(saved);
-} catch(e) {}
-
-function saveUsedLicenses() {
-    localStorage.setItem('NAFAS_USED_LICENSES', JSON.stringify(USED_LICENSES));
-}
-
-// ============================================================
-// SISTEM LISENSI
-// ============================================================
-
-let licenseData = null;
 let session = null;
-
-// Cek lisensi tersimpan
-try {
-    const saved = localStorage.getItem('NAFAS_LICENSE_DATA');
-    if (saved) {
-        licenseData = JSON.parse(saved);
-        if (licenseData && licenseData.expiry && new Date(licenseData.expiry) > new Date()) {
-            enterApp(licenseData);
-        } else {
-            localStorage.removeItem('NAFAS_LICENSE_DATA');
-        }
-    }
-} catch(e) {}
+let currentPage = 'teacher';
 
 // ============================================================
-// FUNGSI AKTIVASI - PASTI BERHASIL!
-// ============================================================
-
-function activateLicense() {
-    const name = document.getElementById('licenseName').value.trim();
-    const school = document.getElementById('licenseSchool').value.trim();
-    const code = document.getElementById('licenseCode').value.trim().toUpperCase();
-    
-    const errorEl = document.getElementById('licenseError');
-    const successEl = document.getElementById('licenseSuccess');
-    
-    errorEl.classList.remove('show');
-    successEl.classList.remove('show');
-    
-    if (!name || !school || !code) {
-        errorEl.textContent = '⚠️ Semua field harus diisi.';
-        errorEl.classList.add('show');
-        return;
-    }
-    
-    // CEK APAKAH KODE VALID
-    if (!VALID_LICENSES.includes(code)) {
-        errorEl.textContent = '❌ Kode lisensi tidak valid. Coba: TEST-NFS-001';
-        errorEl.classList.add('show');
-        return;
-    }
-    
-    // CEK APAKAH SUDAH TERPAKAI
-    if (USED_LICENSES.includes(code)) {
-        errorEl.textContent = '❌ Kode lisensi sudah digunakan oleh guru lain.';
-        errorEl.classList.add('show');
-        return;
-    }
-    
-    // ✅ AKTIVASI BERHASIL!
-    USED_LICENSES.push(code);
-    saveUsedLicenses();
-    
-    const info = {
-        name: name,
-        school: school,
-        code: code,
-        activated: new Date().toISOString(),
-        expiry: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
-    };
-    
-    localStorage.setItem('NAFAS_LICENSE_DATA', JSON.stringify(info));
-    
-    successEl.textContent = '✅ Aktivasi berhasil! Selamat menggunakan SOSIO DIGITAL NaFaS BK.';
-    successEl.classList.add('show');
-    
-    setTimeout(() => enterApp(info), 1000);
-}
-
-function enterApp(data) {
-    licenseData = data;
-    document.getElementById('licenseOverlay').classList.add('hidden');
-    document.getElementById('appContainer').classList.add('active');
-    document.getElementById('userNameDisplay').textContent = data.name;
-    document.getElementById('school').value = data.school || '';
-    document.getElementById('counselor').value = data.name || '';
-    loadSavedSession();
-    showPage('teacher');
-}
-
-function logout() {
-    if (confirm('Keluar dari aplikasi? Lisensi akan tetap tersimpan.')) {
-        document.getElementById('appContainer').classList.remove('active');
-        document.getElementById('licenseOverlay').classList.remove('hidden');
-        document.getElementById('licenseName').value = '';
-        document.getElementById('licenseSchool').value = '';
-        document.getElementById('licenseCode').value = '';
-        document.getElementById('licenseError').classList.remove('show');
-        document.getElementById('licenseSuccess').classList.remove('show');
-    }
-}
-
-// ============================================================
-// FUNGSI LAINNYA
+// FUNGSI NAVIGASI
 // ============================================================
 
 function showPage(page) {
+    currentPage = page;
     ['teacher','student','paper','result'].forEach(p => {
         const el = document.getElementById('page' + p.charAt(0).toUpperCase() + p.slice(1));
         if (el) el.classList.toggle('hidden', p !== page);
@@ -380,25 +226,25 @@ function esc(s) {
 
 function copyText(text) {
     if (navigator.clipboard) {
-        navigator.clipboard.writeText(text).then(() => alert('✅ Berhasil disalin!')).catch(() => {
-            const a = document.createElement('textarea');
-            a.value = text;
-            document.body.appendChild(a);
-            a.select();
-            document.execCommand('copy');
-            a.remove();
-            alert('✅ Berhasil disalin!');
-        });
+        navigator.clipboard.writeText(text).then(() => alert('✅ Berhasil disalin!')).catch(() => fallbackCopy(text));
     } else {
-        const a = document.createElement('textarea');
-        a.value = text;
-        document.body.appendChild(a);
-        a.select();
-        document.execCommand('copy');
-        a.remove();
-        alert('✅ Berhasil disalin!');
+        fallbackCopy(text);
     }
 }
+
+function fallbackCopy(text) {
+    const a = document.createElement('textarea');
+    a.value = text;
+    document.body.appendChild(a);
+    a.select();
+    document.execCommand('copy');
+    a.remove();
+    alert('✅ Berhasil disalin!');
+}
+
+// ============================================================
+// SESSION MANAGEMENT
+// ============================================================
 
 function saveSession() {
     if (session) localStorage.setItem('NAFAS_SESSION_DATA', JSON.stringify(session));
@@ -440,11 +286,15 @@ function renderSessionDisplay() {
     `;
 }
 
+// ============================================================
+// CREATE SESSION
+// ============================================================
+
 async function createSession() {
-    const school = document.getElementById('school').value.trim();
-    const className = document.getElementById('className').value.trim();
-    const year = document.getElementById('year').value.trim();
-    const counselor = document.getElementById('counselor').value.trim();
+    const school = document.getElementById('school').value.trim() || 'SMKN 3';
+    const className = document.getElementById('className').value.trim() || 'X TKPI 2';
+    const year = document.getElementById('year').value.trim() || '2026/2027';
+    const counselor = document.getElementById('counselor').value.trim() || 'Naili';
     const names = document.getElementById('students').value.split('\n').map(x => x.trim()).filter(Boolean);
     
     if (names.length < 2 || !className) {
@@ -475,6 +325,10 @@ async function createSession() {
         note('teacherMsg', '❌ Gagal terhubung ke server. Periksa internet.', 'error');
     }
 }
+
+// ============================================================
+// STUDENT PAGE
+// ============================================================
 
 async function loadStudentPage() {
     const code = location.hash.startsWith('#sesi=') ? decodeURIComponent(location.hash.slice(6)) : document.getElementById('studentCode').value.trim();
@@ -570,6 +424,10 @@ async function submitStudent() {
     }
 }
 
+// ============================================================
+// PAPER MODE
+// ============================================================
+
 function loadPaperEntries() {
     if (!session || !session.students) {
         document.getElementById('paperEntries').innerHTML = '<div class="notif notif-info">Belum ada sesi.</div>';
@@ -626,33 +484,19 @@ function loadPaperEntries() {
     });
     
     document.getElementById('paperPrintSheet').innerHTML = `
-        <div class="print-sheet" style="background:#fff;padding:12px;border:1px solid #e2e8f0;border-radius:8px;font-size:11px;">
-            <div style="text-align:center;border-bottom:2px solid #1a2a6c;padding-bottom:8px;margin-bottom:8px;">
-                <h1 style="font-size:16px;color:#1a2a6c;">SOSIO DIGITAL NaFaS BK</h1>
-                <h2 style="font-size:13px;color:#4a5568;">LEMBAR SOSIOMETRI</h2>
-                <div style="display:flex;justify-content:space-between;font-size:10px;margin-top:4px;"><span>Nama: _________________________________</span><span>Kelas: ${esc(session.className || '________________')}</span></div>
-                <div style="display:flex;justify-content:space-between;font-size:10px;"><span>Sesi: ${esc(session.code || '________________')}</span><span>Tanggal: _________________</span></div>
+        <div class="print-sheet">
+            <div class="print-head">
+                <h1>SOSIO DIGITAL NaFaS BK</h1>
+                <h2>LEMBAR SOSIOMETRI</h2>
+                <div class="print-meta"><span>Nama: _________________________________</span><span>Kelas: ${esc(session.className || '________________')}</span></div>
+                <div class="print-meta"><span>Sesi: ${esc(session.code || '________________')}</span><span>Tanggal: _________________</span></div>
             </div>
-            <div style="font-size:9px;background:#f8fafc;padding:6px;border-radius:4px;margin-bottom:6px;"><b>Petunjuk:</b> Jawab dengan jujur. Pilih nama teman sesuai pertanyaan. Berikan alasan singkat.</div>
-            <div style="border:1px solid #e2e8f0;border-radius:6px;padding:6px;margin:4px 0;">
-                <h3 style="font-size:11px;margin:0 0 2px;color:#1a2a6c;">A. PERTEMANAN (Pilih 2)</h3>
-                <div style="font-size:9px;margin:2px 0;min-height:14px;border-bottom:1px dotted #e2e8f0;padding-bottom:2px;">1) ___________________ &nbsp; Alasan: _________________________________</div>
-                <div style="font-size:9px;margin:2px 0;min-height:14px;border-bottom:1px dotted #e2e8f0;padding-bottom:2px;">2) ___________________ &nbsp; Alasan: _________________________________</div>
-            </div>
-            <div style="border:1px solid #e2e8f0;border-radius:6px;padding:6px;margin:4px 0;">
-                <h3 style="font-size:11px;margin:0 0 2px;color:#1a2a6c;">B. KERJA SAMA (Pilih 2)</h3>
-                <div style="font-size:9px;margin:2px 0;min-height:14px;border-bottom:1px dotted #e2e8f0;padding-bottom:2px;">1) ___________________ &nbsp; Alasan: _________________________________</div>
-                <div style="font-size:9px;margin:2px 0;min-height:14px;border-bottom:1px dotted #e2e8f0;padding-bottom:2px;">2) ___________________ &nbsp; Alasan: _________________________________</div>
-            </div>
-            <div style="border:1px solid #e2e8f0;border-radius:6px;padding:6px;margin:4px 0;">
-                <h3 style="font-size:11px;margin:0 0 2px;color:#1a2a6c;">C. KEPEMIMPINAN (Pilih 1)</h3>
-                <div style="font-size:9px;margin:2px 0;min-height:14px;border-bottom:1px dotted #e2e8f0;padding-bottom:2px;">Nama: ________________ &nbsp; Alasan: _________________________________</div>
-            </div>
-            <div style="border:1px solid #e2e8f0;border-radius:6px;padding:6px;margin:4px 0;">
-                <h3 style="font-size:11px;margin:0 0 2px;color:#1a2a6c;">D. RELASI KURANG NYAMAN</h3>
-                <div style="font-size:9px;margin:2px 0;min-height:14px;border-bottom:1px dotted #e2e8f0;padding-bottom:2px;">Nama: ________________ &nbsp; Alasan: _________________________________</div>
-            </div>
-            <div style="text-align:center;font-size:7px;color:#a0aec0;margin-top:6px;border-top:1px solid #e2e8f0;padding-top:4px;">SOSIO DIGITAL NaFaS BK • Layanan Bimbingan dan Konseling</div>
+            <div class="print-instruction"><b>Petunjuk:</b> Jawab dengan jujur. Pilih nama teman sesuai pertanyaan. Berikan alasan singkat.</div>
+            <div class="print-q"><h3>A. PERTEMANAN (Pilih 2)</h3><div class="line">1) ___________________ &nbsp; Alasan: _________________________________</div><div class="line">2) ___________________ &nbsp; Alasan: _________________________________</div></div>
+            <div class="print-q"><h3>B. KERJA SAMA (Pilih 2)</h3><div class="line">1) ___________________ &nbsp; Alasan: _________________________________</div><div class="line">2) ___________________ &nbsp; Alasan: _________________________________</div></div>
+            <div class="print-q"><h3>C. KEPEMIMPINAN (Pilih 1)</h3><div class="line">Nama: ________________ &nbsp; Alasan: _________________________________</div></div>
+            <div class="print-q"><h3>D. RELASI KURANG NYAMAN</h3><div class="line">Nama: ________________ &nbsp; Alasan: _________________________________</div></div>
+            <div class="print-footer">SOSIO DIGITAL NaFaS BK • Layanan Bimbingan dan Konseling</div>
         </div>
     `;
 }
@@ -722,6 +566,10 @@ function printSheet() {
     window.print();
 }
 
+// ============================================================
+// RESULT
+// ============================================================
+
 async function viewResults() {
     const code = document.getElementById('resultCode').value.trim();
     const pin = document.getElementById('resultPin').value.trim();
@@ -751,7 +599,6 @@ async function viewResults() {
         rs.forEach(x => ['heart','coop','lead','uncomfortable'].forEach(k => {
             (x[k] || []).forEach(id => stats[k][id] = (stats[k][id] || 0) + 1);
         }));
-        const nameMap = {}; st.forEach(s => nameMap[s.id] = s.name);
         
         let html = '<div class="notif notif-success">✅ ' + rs.length + ' dari ' + st.length + ' siswa sudah mengisi.</div>';
         ['heart','coop','lead','uncomfortable'].forEach(key => {
@@ -783,6 +630,10 @@ function printResults() {
     w.document.close();
 }
 
+// ============================================================
+// REFRESH STATUS
+// ============================================================
+
 async function refreshStatus() {
     if (!session || !session.code) return;
     try {
@@ -802,25 +653,18 @@ async function refreshStatus() {
     } catch(e) {}
 }
 
-// INIT - TAMPILKAN LAYAR AKTIVASI
-// Pastikan layar aktivasi selalu muncul di awal
-document.addEventListener('DOMContentLoaded', function() {
-    // Jika belum ada lisensi, tampilkan overlay
-    if (!licenseData) {
-        document.getElementById('licenseOverlay').classList.remove('hidden');
-        document.getElementById('appContainer').classList.remove('active');
-    }
-});
+// ============================================================
+// INIT - LANGSUNG AKTIF!
+// ============================================================
 
-// Jika sudah ada lisensi, langsung masuk
-if (licenseData) {
-    enterApp(licenseData);
-}
+loadSavedSession();
 
 // Jika ada hash sesi
 if (location.hash.startsWith('#sesi=')) {
     setTimeout(() => { showPage('student'); loadStudentPage(); }, 500);
 }
+
+console.log('🌟 SOSIO DIGITAL NaFaS BK - Aktif!');
 </script>
 </body>
 </html>
