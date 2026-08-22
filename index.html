@@ -543,4 +543,569 @@ function renderSessionDisplay() {
             </div>
         </div>
         <div class="share-area">
-            <strong><i class="fas fa-share-alt"></i>
+            <strong><i class="fas fa-share-alt"></i> Bagikan ke Siswa</strong>
+            <div class="share-row">
+                <input id="shareLink" readonly value="${esc(url)}">
+                <button class="btn btn-outline" onclick="copyText(document.getElementById('shareLink').value)">
+                    <i class="fas fa-copy"></i> Salin Link
+                </button>
+            </div>
+            <div class="qr-box">
+                <img src="${qr}" alt="QR Code">
+                <p style="font-size:11px;color:#718096;margin-top:4px;">Scan QR dengan HP untuk mengisi</p>
+                <button class="btn btn-outline" style="margin-top:6px;padding:6px 12px;font-size:11px;" onclick="printQR()">
+                    <i class="fas fa-print"></i> Cetak QR
+                </button>
+            </div>
+        </div>
+        <div class="status-bar">
+            <span><strong>${doneCount}</strong> dari <strong>${totalCount}</strong> siswa sudah mengisi</span>
+            <span style="font-size:12px;color:#718096;">
+                ${session.className ? 'Kelas: ' + esc(session.className) : ''}
+                ${session.school ? '• ' + esc(session.school) : ''}
+            </span>
+        </div>
+    `;
+}
+
+function printQR() {
+    const qrImg = document.querySelector('.qr-box img');
+    if (!qrImg) return;
+    const w = window.open('', '_blank', 'width=400,height=500');
+    if (!w) { alert('Izinkan pop-up untuk mencetak QR.'); return; }
+    w.document.write(`
+        <html><head><title>QR Code Sesi</title>
+        <style>body{text-align:center;padding:40px;font-family:Arial;}img{width:300px;height:300px;border:1px solid #ddd;padding:12px;border-radius:12px;}h2{color:#1a2a6c;}</style>
+        </head><body>
+        <h2>SOSIO DIGITAL NaFaS BK</h2>
+        <p>Kode Sesi: <strong>${esc(session.code)}</strong></p>
+        <img src="${qrImg.src}">
+        <p style="font-size:12px;color:#666;word-break:break-all;">${esc(document.getElementById('shareLink').value)}</p>
+        <script>window.onload=function(){setTimeout(function(){window.print()},700)}<\/script>
+        </body></html>
+    `);
+    w.document.close();
+}
+
+// ============================================================
+// CREATE SESSION
+// ============================================================
+async function createSession() {
+    const school = document.getElementById('school').value.trim();
+    const className = document.getElementById('className').value.trim();
+    const year = document.getElementById('year').value.trim();
+    const counselor = document.getElementById('counselor').value.trim();
+    const names = document.getElementById('students').value.split('\n').map(x => x.trim()).filter(Boolean);
+    
+    if (names.length < 2) { note('teacherMsg', '⚠️ Masukkan minimal 2 nama siswa.', 'warning'); return; }
+    if (!className) { note('teacherMsg', '⚠️ Masukkan nama kelas.', 'warning'); return; }
+    
+    note('teacherMsg', '⏳ Membuat sesi...', 'info');
+    
+    try {
+        const students = names.map((name, i) => ({ id: 'S' + (i + 1), name }));
+        const payload = { action: 'createSession', school, className, year, counselor, students };
+        if (licenseData && licenseData.code) payload.license = licenseData.code;
+        
+        const response = await fetch(SERVER_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify(payload)
+        });
+        const result = await response.json();
+        
+        if (result.status !== 'OK') {
+            note('teacherMsg', '❌ ' + esc(result.message || 'Gagal membuat sesi.'), 'error');
+            return;
+        }
+        
+        session = {
+            code: result.code,
+            pin: result.pin,
+            students: students,
+            school: school,
+            className: className,
+            year: year,
+            counselor: counselor,
+            submittedIds: []
+        };
+        saveSession();
+        renderSessionDisplay();
+        note('teacherMsg', '✅ Sesi berhasil dibuat! Kode: ' + result.code, 'success');
+        loadPaperEntries();
+    } catch(e) {
+        note('teacherMsg', '❌ Gagal terhubung ke server. Periksa koneksi internet.', 'error');
+    }
+}
+
+// ============================================================
+// STUDENT PAGE
+// ============================================================
+async function loadStudentPage() {
+    const code = location.hash.startsWith('#sesi=') ? 
+        decodeURIComponent(location.hash.slice(6)) : document.getElementById('studentCode').value.trim();
+    
+    if (!code) {
+        document.getElementById('studentQuestions').innerHTML = '<div class="notif notif-info">Masukkan kode sesi dari Guru BK.</div>';
+        return;
+    }
+    
+    try {
+        const response = await fetch(SERVER_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action: 'getSession', code })
+        });
+        const result = await response.json();
+        
+        if (result.status !== 'OK') {
+            document.getElementById('studentQuestions').innerHTML = '<div class="notif notif-error">❌ ' + esc(result.message) + '</div>';
+            return;
+        }
+        
+        session = result.session;
+        document.getElementById('studentCode').value = code;
+        
+        const opts = '<option value="">— Pilih nama —</option>' + 
+            session.students.map(s => '<option value="' + esc(s.id) + '">' + esc(s.name) + '</option>').join('');
+        document.getElementById('studentName').innerHTML = opts;
+        document.getElementById('studentQuestions').innerHTML = buildQuestions();
+        document.querySelectorAll('.ch-select').forEach(el => el.innerHTML = opts);
+    } catch(e) {
+        document.getElementById('studentQuestions').innerHTML = '<div class="notif notif-error">❌ Gagal terhubung ke server.</div>';
+    }
+}
+
+function buildQuestions() {
+    return `
+        <div class="card-app" style="margin-top:12px;border:2px solid #e2e8f0;">
+            <div style="font-weight:700;color:#1a2a6c;">❤️ PERTEMANAN</div>
+            <p style="font-size:13px;color:#4a5568;">Pilih 2 teman yang paling nyaman kamu ajak berteman.</p>
+            <div class="form-group"><label>Pilihan 1</label><select class="ch-select heart"></select><label>Alasan</label><textarea class="ch-reason heart" placeholder="Tulis alasan..."></textarea></div>
+            <div class="form-group"><label>Pilihan 2</label><select class="ch-select heart"></select><label>Alasan</label><textarea class="ch-reason heart" placeholder="Tulis alasan..."></textarea></div>
+        </div>
+        <div class="card-app" style="border:2px solid #e2e8f0;">
+            <div style="font-weight:700;color:#1a2a6c;">🤝 KERJA SAMA</div>
+            <p style="font-size:13px;color:#4a5568;">Pilih 2 teman yang paling kamu pilih untuk bekerja sama.</p>
+            <div class="form-group"><label>Pilihan 1</label><select class="ch-select coop"></select><label>Alasan</label><textarea class="ch-reason coop" placeholder="Tulis alasan..."></textarea></div>
+            <div class="form-group"><label>Pilihan 2</label><select class="ch-select coop"></select><label>Alasan</label><textarea class="ch-reason coop" placeholder="Tulis alasan..."></textarea></div>
+        </div>
+        <div class="card-app" style="border:2px solid #e2e8f0;">
+            <div style="font-weight:700;color:#1a2a6c;">⭐ KEPEMIMPINAN</div>
+            <p style="font-size:13px;color:#4a5568;">Pilih 1 teman yang menurutmu mampu memimpin.</p>
+            <div class="form-group"><label>Pilihan</label><select class="ch-select lead"></select><label>Alasan</label><textarea class="ch-reason lead" placeholder="Tulis alasan..."></textarea></div>
+        </div>
+        <div class="card-app" style="border:2px solid #e2e8f0;">
+            <div style="font-weight:700;color:#1a2a6c;">🔎 RELASI KURANG NYAMAN</div>
+            <p style="font-size:13px;color:#4a5568;">Pilih maksimal 1 teman yang paling sulit diajak berinteraksi.</p>
+            <div class="form-group"><label>Pilihan</label><select class="ch-select uncomfortable"><option value="">— Tidak ada —</option></select><label>Alasan</label><textarea class="ch-reason uncomfortable" placeholder="Tulis alasan..."></textarea></div>
+        </div>
+    `;
+}
+
+function getVals(cls) { return [...document.querySelectorAll('select.ch-select.' + cls)].map(x => x.value); }
+function getReasons(cls) { return [...document.querySelectorAll('textarea.ch-reason.' + cls)].map(x => x.value.trim()); }
+
+async function submitStudent() {
+    const me = document.getElementById('studentName').value;
+    const code = document.getElementById('studentCode').value.trim();
+    const heart = getVals('heart'), coop = getVals('coop'), lead = getVals('lead'), uncomfortable = getVals('uncomfortable').filter(Boolean);
+    const hr = getReasons('heart'), cr = getReasons('coop'), lr = getReasons('lead'), ur = getReasons('uncomfortable').filter(Boolean);
+    const all = [...heart, ...coop, ...lead, ...uncomfortable];
+    const allReasons = [...hr, ...cr, ...lr, ...ur];
+    
+    if (!me) { note('studentMsg', '⚠️ Pilih nama kamu.', 'warning'); return; }
+    if (heart.some(x => !x) || coop.some(x => !x) || !lead[0] || allReasons.some(x => !x)) {
+        note('studentMsg', '⚠️ Lengkapi semua pilihan dan alasan.', 'warning');
+        return;
+    }
+    if (all.includes(me)) { note('studentMsg', '⚠️ Tidak boleh memilih diri sendiri.', 'warning'); return; }
+    if (new Set(heart).size < 2 || new Set(coop).size < 2) {
+        note('studentMsg', '⚠️ Dua pilihan harus berbeda.', 'warning');
+        return;
+    }
+    
+    note('studentMsg', '⏳ Mengirim...', 'info');
+    
+    try {
+        const payload = { action: 'submitResponse', code, respondent: me, heart, heartReason: hr, coop, coopReason: cr, lead, leadReason: lr, uncomfortable, uncomfortableReason: ur };
+        if (licenseData && licenseData.code) payload.license = licenseData.code;
+        
+        const response = await fetch(SERVER_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify(payload)
+        });
+        const result = await response.json();
+        
+        if (result.status === 'OK') {
+            note('studentMsg', '✅ Jawaban berhasil dikirim! Terima kasih.', 'success');
+            document.querySelectorAll('.ch-select').forEach(el => el.value = '');
+            document.querySelectorAll('.ch-reason').forEach(el => el.value = '');
+            document.getElementById('studentName').value = '';
+        } else {
+            note('studentMsg', '❌ ' + esc(result.message), 'error');
+        }
+    } catch(e) {
+        note('studentMsg', '❌ Gagal mengirim. Periksa koneksi internet.', 'error');
+    }
+}
+
+// ============================================================
+// PAPER MODE
+// ============================================================
+function loadPaperEntries() {
+    if (!session || !session.students) {
+        document.getElementById('paperEntries').innerHTML = '<div class="notif notif-info">Belum ada sesi. Buat sesi di menu Guru BK.</div>';
+        document.getElementById('paperPrintSheet').innerHTML = '';
+        return;
+    }
+    
+    const opts = '<option value="">— Pilih —</option>' + session.students.map(s => '<option value="' + esc(s.id) + '">' + esc(s.name) + '</option>').join('');
+    
+    document.getElementById('paperEntries').innerHTML = session.students.map((s, i) => {
+        const draft = loadDraft(s.id);
+        return `
+            <div class="card-app" style="border:2px solid #e2e8f0;margin-bottom:10px;padding:16px;">
+                <div style="font-weight:700;font-size:14px;color:#1a2a6c;">${i+1}. ${esc(s.name)}</div>
+                <div class="grid-form" style="grid-template-columns:1fr 1fr;">
+                    <div><label style="font-weight:600;font-size:11px;">❤️ Pertemanan 1</label>
+                    <select class="paper-select heart" data-id="${esc(s.id)}">${opts}</select>
+                    <input class="paper-reason heart" value="${draft?.heartReason?.[0] || ''}" placeholder="Alasan..." style="margin-top:4px;padding:8px;border:1px solid #e2e8f0;border-radius:6px;width:100%;font-size:12px;"></div>
+                    <div><label style="font-weight:600;font-size:11px;">❤️ Pertemanan 2</label>
+                    <select class="paper-select heart" data-id="${esc(s.id)}">${opts}</select>
+                    <input class="paper-reason heart" value="${draft?.heartReason?.[1] || ''}" placeholder="Alasan..." style="margin-top:4px;padding:8px;border:1px solid #e2e8f0;border-radius:6px;width:100%;font-size:12px;"></div>
+                    <div><label style="font-weight:600;font-size:11px;">🤝 Kerja Sama 1</label>
+                    <select class="paper-select coop" data-id="${esc(s.id)}">${opts}</select>
+                    <input class="paper-reason coop" value="${draft?.coopReason?.[0] || ''}" placeholder="Alasan..." style="margin-top:4px;padding:8px;border:1px solid #e2e8f0;border-radius:6px;width:100%;font-size:12px;"></div>
+                    <div><label style="font-weight:600;font-size:11px;">🤝 Kerja Sama 2</label>
+                    <select class="paper-select coop" data-id="${esc(s.id)}">${opts}</select>
+                    <input class="paper-reason coop" value="${draft?.coopReason?.[1] || ''}" placeholder="Alasan..." style="margin-top:4px;padding:8px;border:1px solid #e2e8f0;border-radius:6px;width:100%;font-size:12px;"></div>
+                    <div><label style="font-weight:600;font-size:11px;">⭐ Kepemimpinan</label>
+                    <select class="paper-select lead" data-id="${esc(s.id)}">${opts}</select>
+                    <input class="paper-reason lead" value="${draft?.leadReason?.[0] || ''}" placeholder="Alasan..." style="margin-top:4px;padding:8px;border:1px solid #e2e8f0;border-radius:6px;width:100%;font-size:12px;"></div>
+                    <div><label style="font-weight:600;font-size:11px;">🔎 Relasi Kurang Nyaman</label>
+                    <select class="paper-select uncomfortable" data-id="${esc(s.id)}"><option value="">— Tidak ada —</option>${opts.replace('<option value="">— Pilih —</option>', '')}</select>
+                    <input class="paper-reason uncomfortable" value="${draft?.uncomfortableReason?.[0] || ''}" placeholder="Alasan..." style="margin-top:4px;padding:8px;border:1px solid #e2e8f0;border-radius:6px;width:100%;font-size:12px;"></div>
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    // Load draft values
+    document.querySelectorAll('.paper-select').forEach(el => {
+        const id = el.dataset.id;
+        const draft = loadDraft(id);
+        if (draft) {
+            const cls = el.className.split(' ')[1];
+            const idx = [...document.querySelectorAll('.paper-select.' + cls)].indexOf(el);
+            const values = draft[cls] || [];
+            if (values[idx]) el.value = values[idx];
+        }
+    });
+    
+    // Auto-save
+    document.querySelectorAll('.paper-select, .paper-reason').forEach(el => {
+        el.addEventListener('change', () => {
+            const card = el.closest('.card-app');
+            const selectors = card.querySelectorAll('.paper-select');
+            const reasons = card.querySelectorAll('.paper-reason');
+            const id = selectors[0].dataset.id;
+            const heart = selectors[0].value && selectors[1].value ? [selectors[0].value, selectors[1].value] : [];
+            const coop = selectors[2].value && selectors[3].value ? [selectors[2].value, selectors[3].value] : [];
+            const lead = selectors[4].value ? [selectors[4].value] : [];
+            const uncomfortable = selectors[5].value ? [selectors[5].value] : [];
+            saveDraft(id, {
+                saved: false,
+                heart, heartReason: [reasons[0].value.trim(), reasons[1].value.trim()],
+                coop, coopReason: [reasons[2].value.trim(), reasons[3].value.trim()],
+                lead, leadReason: [reasons[4].value.trim()],
+                uncomfortable, uncomfortableReason: [reasons[5].value.trim()]
+            });
+        });
+    });
+    
+    // Print sheet - HEMAT KERTAS
+    document.getElementById('paperPrintSheet').innerHTML = `
+        <div class="print-sheet">
+            <div class="print-head">
+                <h1>SOSIO DIGITAL NaFaS BK</h1>
+                <h2>LEMBAR SOSIOMETRI</h2>
+                <div class="print-meta">
+                    <span>Nama: _________________________________</span>
+                    <span>Kelas: ${esc(session.className || '________________')}</span>
+                </div>
+                <div class="print-meta">
+                    <span>Sesi: ${esc(session.code || '________________')}</span>
+                    <span>Tanggal: _________________</span>
+                </div>
+            </div>
+            <div class="print-instruction">
+                <b>Petunjuk:</b> Jawab dengan jujur. Pilih nama teman sesuai pertanyaan. Berikan alasan singkat.
+                Jawaban bersifat pribadi untuk layanan BK.
+            </div>
+            <div class="print-q">
+                <h3>A. PERTEMANAN (Pilih 2)</h3>
+                <div class="line">1) ___________________ &nbsp; Alasan: _________________________________</div>
+                <div class="line">2) ___________________ &nbsp; Alasan: _________________________________</div>
+            </div>
+            <div class="print-q">
+                <h3>B. KERJA SAMA (Pilih 2)</h3>
+                <div class="line">1) ___________________ &nbsp; Alasan: _________________________________</div>
+                <div class="line">2) ___________________ &nbsp; Alasan: _________________________________</div>
+            </div>
+            <div class="print-q">
+                <h3>C. KEPEMIMPINAN (Pilih 1)</h3>
+                <div class="line">Nama: ________________ &nbsp; Alasan: _________________________________</div>
+            </div>
+            <div class="print-q">
+                <h3>D. RELASI KURANG NYAMAN</h3>
+                <div class="line">Nama: ________________ &nbsp; Alasan: _________________________________</div>
+            </div>
+            <div class="print-footer">SOSIO DIGITAL NaFaS BK • Layanan Bimbingan dan Konseling</div>
+        </div>
+    `;
+}
+
+function loadDraft(id) {
+    try { return JSON.parse(localStorage.getItem('NAFAS_DRAFT_' + session.code + '_' + id) || 'null'); } catch(e) { return null; }
+}
+function saveDraft(id, data) {
+    try { localStorage.setItem('NAFAS_DRAFT_' + session.code + '_' + id, JSON.stringify(data)); } catch(e) {}
+}
+function clearDraft(id) {
+    try { localStorage.removeItem('NAFAS_DRAFT_' + session.code + '_' + id); } catch(e) {}
+}
+
+async function submitPaperEntries() {
+    if (!session || !session.students) { note('paperMsg', '⚠️ Belum ada sesi.', 'warning'); return; }
+    const cards = document.querySelectorAll('#paperEntries .card-app');
+    note('paperMsg', '⏳ Menyimpan entri...', 'info');
+    let saved = 0;
+    
+    for (let i = 0; i < cards.length; i++) {
+        const card = cards[i];
+        const selectors = card.querySelectorAll('.paper-select');
+        const reasons = card.querySelectorAll('.paper-reason');
+        const id = selectors[0].dataset.id;
+        const heart = selectors[0].value && selectors[1].value ? [selectors[0].value, selectors[1].value] : [];
+        const coop = selectors[2].value && selectors[3].value ? [selectors[2].value, selectors[3].value] : [];
+        const lead = selectors[4].value ? [selectors[4].value] : [];
+        const uncomfortable = selectors[5].value ? [selectors[5].value] : [];
+        const heartReason = [reasons[0].value.trim(), reasons[1].value.trim()];
+        const coopReason = [reasons[2].value.trim(), reasons[3].value.trim()];
+        const leadReason = [reasons[4].value.trim()];
+        const uncomfortableReason = [reasons[5].value.trim()];
+        
+        if (heart.length !== 2 || coop.length !== 2 || !lead.length || heartReason.some(x => !x) || coopReason.some(x => !x) || !leadReason[0]) {
+            saveDraft(id, { saved: false, heart, heartReason, coop, coopReason, lead, leadReason, uncomfortable, uncomfortableReason });
+            note('paperMsg', '⚠️ Entri ' + (i+1) + ' belum lengkap. Data tersimpan otomatis.', 'warning');
+            return;
+        }
+        
+        const draft = loadDraft(id);
+        if (draft && draft.saved) { saved++; continue; }
+        
+        try {
+            const payload = { action: 'submitResponse', code: session.code, respondent: id, heart, heartReason, coop, coopReason, lead, leadReason, uncomfortable, uncomfortableReason };
+            if (licenseData && licenseData.code) payload.license = licenseData.code;
+            
+            const response = await fetch(SERVER_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify(payload)
+            });
+            const result = await response.json();
+            
+            if (result.status === 'OK' || (result.message && result.message.includes('sudah diterima'))) {
+                clearDraft(id);
+                saveDraft(id, { saved: true });
+                saved++;
+            } else {
+                saveDraft(id, { saved: false, heart, heartReason, coop, coopReason, lead, leadReason, uncomfortable, uncomfortableReason });
+                note('paperMsg', '❌ Entri ' + (i+1) + ' gagal: ' + esc(result.message), 'error');
+                return;
+            }
+        } catch(e) {
+            saveDraft(id, { saved: false, heart, heartReason, coop, coopReason, lead, leadReason, uncomfortable, uncomfortableReason });
+            note('paperMsg', '❌ Error pada entri ' + (i+1), 'error');
+            return;
+        }
+    }
+    note('paperMsg', '✅ ' + saved + ' entri berhasil disimpan!', 'success');
+    await refreshStatus();
+}
+
+function printSheet() {
+    if (!session) { alert('Buat sesi terlebih dahulu di menu Guru BK.'); return; }
+    window.print();
+}
+
+// ============================================================
+// RESULT VIEWER
+// ============================================================
+async function viewResults() {
+    const code = document.getElementById('resultCode').value.trim();
+    const pin = document.getElementById('resultPin').value.trim();
+    if (!code || !pin) { document.getElementById('resultDisplay').innerHTML = '<div class="notif notif-warning">⚠️ Masukkan kode sesi dan PIN Guru BK.</div>'; return; }
+    document.getElementById('resultDisplay').innerHTML = '<div class="notif notif-info">⏳ Memuat hasil...</div>';
+    
+    try {
+        const payload = { action: 'getResults', code, pin };
+        if (licenseData && licenseData.code) payload.license = licenseData.code;
+        
+        const response = await fetch(SERVER_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify(payload)
+        });
+        const result = await response.json();
+        
+        if (result.status !== 'OK') {
+            document.getElementById('resultDisplay').innerHTML = '<div class="notif notif-error">❌ ' + esc(result.message) + '</div>';
+            return;
+        }
+        
+        const rs = result.responses || [];
+        const st = result.session.students || [];
+        if (rs.length === 0) { document.getElementById('resultDisplay').innerHTML = '<div class="notif notif-info">Belum ada siswa yang mengisi.</div>'; return; }
+        
+        const stats = { heart: {}, coop: {}, lead: {}, uncomfortable: {} };
+        st.forEach(s => ['heart','coop','lead','uncomfortable'].forEach(k => stats[k][s.id] = 0));
+        rs.forEach(x => ['heart','coop','lead','uncomfortable'].forEach(k => {
+            (x[k] || []).forEach(id => stats[k][id] = (stats[k][id] || 0) + 1);
+        }));
+        const nameMap = {}; st.forEach(s => nameMap[s.id] = s.name);
+        
+        function renderRank(title, icon, key) {
+            const sorted = st.map(s => ({ name: s.name, count: stats[key][s.id] || 0 }))
+                .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+            const max = Math.max(1, ...sorted.map(x => x.count));
+            let html = '<div class="card-app" style="border:2px solid #e2e8f0;padding:16px;margin-top:8px;">';
+            html += '<div style="font-weight:700;font-size:14px;color:#1a2a6c;">' + icon + ' ' + title + '</div>';
+            html += sorted.map((x, i) => `
+                <div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid #f0f0f0;font-size:12px;">
+                    <span style="font-weight:600;min-width:24px;">${i+1}.</span>
+                    <span style="flex:1;">${esc(x.name)}</span>
+                    <div style="flex:1;height:6px;background:#e2e8f0;border-radius:4px;max-width:100px;">
+                        <div style="height:100%;width:${Math.round((x.count/max)*100)}%;background:linear-gradient(135deg,#667eea,#764ba2);border-radius:4px;"></div>
+                    </div>
+                    <span style="font-weight:600;color:#1a2a6c;min-width:30px;text-align:right;">${x.count}</span>
+                </div>
+            `).join('');
+            html += '</div>';
+            return html;
+        }
+        
+        function renderReasons(title, icon, key, reasonKey) {
+            let items = [];
+            rs.forEach(x => {
+                (x[key] || []).forEach((id, i) => {
+                    items.push({ name: nameMap[id] || id, respondent: x.respondentName || x.respondent, reason: (x[reasonKey] || [])[i] || '-' });
+                });
+            });
+            if (items.length === 0) return '';
+            let html = '<div class="card-app" style="border:2px solid #e2e8f0;padding:16px;margin-top:8px;">';
+            html += '<div style="font-weight:700;font-size:13px;color:#1a2a6c;">' + icon + ' Alasan ' + title + '</div>';
+            html += items.map(item => `
+                <div style="padding:4px 0;border-bottom:1px solid #f0f0f0;font-size:11px;">
+                    <strong>${esc(item.name)}</strong>
+                    <span style="color:#718096;font-size:10px;"> — dipilih oleh ${esc(item.respondent)}</span>
+                    <div style="color:#4a5568;font-size:10px;margin-top:2px;">${esc(item.reason)}</div>
+                </div>
+            `).join('');
+            html += '</div>';
+            return html;
+        }
+        
+        let display = '<div class="notif notif-success">✅ ' + rs.length + ' dari ' + st.length + ' siswa sudah mengisi.</div>';
+        display += renderRank('Pertemanan', '❤️', 'heart');
+        display += renderRank('Kerja Sama', '🤝', 'coop');
+        display += renderRank('Kepemimpinan', '⭐', 'lead');
+        display += renderRank('Relasi Kurang Nyaman', '🔎', 'uncomfortable');
+        display += renderReasons('Pertemanan', '❤️', 'heart', 'heartReason');
+        display += renderReasons('Kerja Sama', '🤝', 'coop', 'coopReason');
+        display += renderReasons('Kepemimpinan', '⭐', 'lead', 'leadReason');
+        display += renderReasons('Relasi Kurang Nyaman', '🔎', 'uncomfortable', 'uncomfortableReason');
+        display += '<div style="font-size:10px;color:#a0aec0;margin-top:12px;border-top:1px solid #e2e8f0;padding-top:8px;">🔐 Khusus Guru BK. Data digunakan untuk layanan Bimbingan dan Konseling.</div>';
+        document.getElementById('resultDisplay').innerHTML = display;
+    } catch(e) {
+        document.getElementById('resultDisplay').innerHTML = '<div class="notif notif-error">❌ Gagal memuat hasil. Periksa koneksi internet.</div>';
+    }
+}
+
+function printResults() {
+    const content = document.getElementById('resultDisplay').innerHTML;
+    if (!content || content.includes('Masukkan kode sesi') || content.includes('Belum ada siswa')) {
+        alert('Silakan buka hasil terlebih dahulu.');
+        return;
+    }
+    const w = window.open('', '_blank', 'width=900,height=700');
+    if (!w) { alert('Izinkan pop-up untuk mencetak.'); return; }
+    w.document.write(`
+        <html><head><title>Hasil Sosiometri</title>
+        <style>body{font-family:Arial,sans-serif;padding:20px;color:#1a202c;font-size:12px;}
+        .card-app{border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin:6px 0;page-break-inside:avoid;}
+        .notif{padding:8px 12px;border-radius:6px;margin:4px 0;}
+        .notif-success{background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0;}
+        .notif-info{background:#eff6ff;color:#2563eb;border:1px solid #93c5fd;}
+        @page{margin:8mm;}
+        </style>
+        </head><body>
+        <h1 style="font-size:18px;text-align:center;color:#1a2a6c;">SOSIO DIGITAL NaFaS BK</h1>
+        <h2 style="font-size:14px;text-align:center;color:#4a5568;">HASIL SOSIOMETRI</h2>
+        <div style="font-size:11px;margin-bottom:8px;text-align:center;">Kode: ${esc(session?.code || document.getElementById('resultCode').value)}</div>
+        ${content}
+        <script>window.onload=function(){setTimeout(function(){window.print()},600)}<\/script>
+        </body></html>
+    `);
+    w.document.close();
+}
+
+// ============================================================
+// REFRESH STATUS
+// ============================================================
+async function refreshStatus() {
+    if (!session || !session.code) return;
+    try {
+        const payload = { action: 'getResults', code: session.code, pin: session.pin };
+        if (licenseData && licenseData.code) payload.license = licenseData.code;
+        const response = await fetch(SERVER_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify(payload)
+        });
+        const result = await response.json();
+        if (result.status === 'OK') {
+            const answered = {};
+            (result.responses || []).forEach(x => answered[String(x.respondent)] = true);
+            session.submittedIds = (session.students || []).filter(s => answered[String(s.id)]).map(s => String(s.id));
+            saveSession();
+            renderSessionDisplay();
+        }
+    } catch(e) {}
+}
+
+// ============================================================
+// HASH ROUTING
+// ============================================================
+window.addEventListener('hashchange', function() {
+    if (location.hash.startsWith('#sesi=')) {
+        showPage('student');
+        loadStudentPage();
+    }
+});
+
+// ============================================================
+// INIT
+// ============================================================
+if (licenseData) enterApp(licenseData);
+if (location.hash.startsWith('#sesi=')) {
+    setTimeout(() => { showPage('student'); loadStudentPage(); }, 500);
+}
+
+console.log('🌟 SOSIO DIGITAL NaFaS BK - Siap Jual');
+console.log('🔒 Satu Lisensi untuk Satu Guru BK');
+</script>
+</body>
+</html>
