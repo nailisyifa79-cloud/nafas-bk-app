@@ -1,3 +1,256 @@
+<!doctype html>
+<html lang="id">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SOSIO DIGITAL NaFaS BK</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Inter',sans-serif; background:#f0f4f8; color:#1a202c; min-height:100vh; }
+        #licenseOverlay { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.7); backdrop-filter:blur(10px); display:flex; align-items:center; justify-content:center; z-index:9999; padding:20px; }
+        #licenseOverlay.hidden { display:none; }
+        .license-card { background:#fff; border-radius:20px; padding:40px; max-width:440px; width:100%; box-shadow:0 40px 80px rgba(0,0,0,0.3); }
+        .license-card .logo { text-align:center; font-size:48px; margin-bottom:8px; }
+        .license-card h2 { text-align:center; font-size:20px; font-weight:800; color:#1a202c; }
+        .license-card .sub { text-align:center; color:#718096; font-size:13px; margin-bottom:20px; }
+        .license-card .form-group { margin-bottom:14px; }
+        .license-card label { display:block; font-weight:600; font-size:12px; color:#4a5568; margin-bottom:4px; }
+        .license-card input { width:100%; padding:12px 14px; border:2px solid #e2e8f0; border-radius:10px; font-size:14px; font-family:'Inter',sans-serif; }
+        .license-card input:focus { outline:none; border-color:#667eea; }
+        .btn-license { width:100%; padding:14px; border:none; border-radius:10px; font-weight:700; font-size:15px; cursor:pointer; font-family:'Inter',sans-serif; background:linear-gradient(135deg,#1a2a6c,#b21f1f); color:#fff; margin-top:6px; }
+        .btn-license:hover { transform:translateY(-2px); }
+        .license-card .error-msg { padding:12px; background:#fef2f2; border-radius:8px; color:#dc2626; font-size:13px; margin-top:10px; display:none; }
+        .license-card .error-msg.show { display:block; }
+        .license-card .success-msg { padding:12px; background:#f0fdf4; border-radius:8px; color:#16a34a; font-size:13px; margin-top:10px; display:none; }
+        .license-card .success-msg.show { display:block; }
+        .license-card .loading-msg { padding:12px; background:#eff6ff; border-radius:8px; color:#2563eb; font-size:13px; margin-top:10px; display:none; }
+        .license-card .loading-msg.show { display:block; }
+        .license-card .info { text-align:center; font-size:11px; color:#a0aec0; margin-top:14px; }
+        
+        #appContainer { display:none; }
+        #appContainer.active { display:block; }
+        
+        .header-app { background:linear-gradient(135deg,#1a2a6c,#b21f1f); padding:16px 24px; position:sticky; top:0; z-index:100; }
+        .header-app .wrap { max-width:1200px; margin:0 auto; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; }
+        .header-app .brand { display:flex; align-items:center; gap:10px; color:#fff; }
+        .header-app .brand i { font-size:24px; }
+        .header-app .brand h1 { font-size:18px; font-weight:800; }
+        .header-app .brand span { font-size:11px; opacity:0.8; }
+        .header-app .user-info { color:#fff; font-size:12px; display:flex; align-items:center; gap:10px; }
+        .header-app .user-info .badge { background:rgba(255,255,255,0.2); padding:4px 12px; border-radius:20px; font-size:10px; }
+        .btn-logout { background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.2); color:#fff; padding:6px 14px; border-radius:8px; cursor:pointer; font-size:11px; font-family:'Inter',sans-serif; }
+        
+        .nav-app { max-width:1200px; margin:0 auto; padding:12px 24px 0; display:flex; gap:6px; flex-wrap:wrap; }
+        .nav-app button { background:#fff; border:2px solid #e2e8f0; border-radius:10px; padding:8px 16px; font-weight:600; font-size:12px; cursor:pointer; font-family:'Inter',sans-serif; display:flex; align-items:center; gap:6px; color:#4a5568; }
+        .nav-app button.active { background:linear-gradient(135deg,#1a2a6c,#b21f1f); border-color:transparent; color:#fff; }
+        
+        .main-app { max-width:1200px; margin:0 auto; padding:20px; }
+        .card-app { background:#fff; border-radius:16px; padding:24px; margin-bottom:16px; box-shadow:0 4px 20px rgba(0,0,0,0.08); }
+        .card-app .title { font-size:17px; font-weight:800; margin-bottom:14px; display:flex; align-items:center; gap:8px; }
+        .grid-form { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; }
+        .form-group { margin-bottom:12px; }
+        .form-group label { display:block; font-weight:600; font-size:11px; color:#4a5568; margin-bottom:3px; }
+        .form-group input, .form-group select, .form-group textarea { width:100%; padding:10px 12px; border:2px solid #e2e8f0; border-radius:8px; font-size:13px; font-family:'Inter',sans-serif; background:#f8fafc; }
+        .form-group textarea { min-height:80px; resize:vertical; }
+        .actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:14px; }
+        .btn { padding:10px 20px; border:none; border-radius:8px; font-weight:700; font-size:12px; cursor:pointer; font-family:'Inter',sans-serif; display:inline-flex; align-items:center; gap:6px; }
+        .btn-success { background:linear-gradient(135deg,#11998e,#38ef7d); color:#fff; }
+        .btn-primary { background:linear-gradient(135deg,#667eea,#764ba2); color:#fff; }
+        .btn-warning { background:linear-gradient(135deg,#f093fb,#f5576c); color:#fff; }
+        .btn-outline { background:transparent; color:#4a5568; border:2px solid #e2e8f0; }
+        .btn-dark { background:#1a202c; color:#fff; }
+        .hidden { display:none !important; }
+        
+        .session-box { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin:10px 0; }
+        .session-item { background:#f8fafc; border-radius:12px; padding:14px; text-align:center; }
+        .session-item .label { font-size:10px; font-weight:600; color:#a0aec0; text-transform:uppercase; }
+        .session-item .value { font-size:24px; font-weight:900; margin-top:2px; background:linear-gradient(135deg,#1a2a6c,#b21f1f); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+        .session-item .value-monochrome { font-size:24px; font-weight:900; color:#1a202c; margin-top:2px; }
+        .share-area { background:#f8fafc; border-radius:12px; padding:16px; margin-top:10px; border:2px dashed #e2e8f0; }
+        .share-row { display:flex; gap:8px; align-items:center; margin-top:8px; }
+        .share-row input { flex:1; padding:10px 12px; border:2px solid #e2e8f0; border-radius:8px; font-size:12px; background:#fff; font-family:'Inter',sans-serif; }
+        .qr-box { text-align:center; padding:12px; margin-top:10px; background:#fff; border-radius:12px; border:2px solid #e2e8f0; }
+        .qr-box img { width:140px; height:140px; border-radius:10px; padding:6px; background:#fff; }
+        .status-bar { display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:#f8fafc; border-radius:8px; margin-top:10px; flex-wrap:wrap; gap:6px; font-size:12px; }
+        
+        .notif { padding:10px 14px; border-radius:8px; margin-top:10px; font-weight:500; font-size:12px; }
+        .notif-success { background:#f0fdf4; color:#16a34a; border:1px solid #bbf7d0; }
+        .notif-warning { background:#fffbeb; color:#d97706; border:1px solid #fde68a; }
+        .notif-error { background:#fef2f2; color:#dc2626; border:1px solid #fca5a5; }
+        .notif-info { background:#eff6ff; color:#2563eb; border:1px solid #93c5fd; }
+        
+        @media (max-width:600px) { .license-card { padding:24px; } .nav-app button { font-size:11px; padding:6px 12px; } .card-app { padding:16px; } .share-row { flex-direction:column; } .share-row input { width:100%; } }
+    </style>
+</head>
+<body>
+
+<!-- LAYAR AKTIVASI LISENSI -->
+<div id="licenseOverlay">
+    <div class="license-card">
+        <div class="logo">🌟</div>
+        <h2>SOSIO DIGITAL NaFaS BK</h2>
+        <p class="sub">Aktivasi Lisensi — 1 Lisensi untuk 1 Guru</p>
+        
+        <div class="form-group">
+            <label>Nama Guru BK</label>
+            <input id="licenseName" placeholder="Nama lengkap Anda">
+        </div>
+        <div class="form-group">
+            <label>Asal Sekolah</label>
+            <input id="licenseSchool" placeholder="Nama sekolah">
+        </div>
+        <div class="form-group">
+            <label>Kode Lisensi</label>
+            <input id="licenseCode" placeholder="Contoh: NFS-ABCD-1234">
+        </div>
+        
+        <button class="btn-license" onclick="activateLicense()">
+            <i class="fas fa-unlock"></i> Aktivasi Aplikasi
+        </button>
+        
+        <div id="loadingMsg" class="loading-msg">⏳ Memeriksa kode...</div>
+        <div id="licenseError" class="error-msg"></div>
+        <div id="licenseSuccess" class="success-msg"></div>
+        
+        <div class="info"><i class="fas fa-shield-alt"></i> Lisensi khusus untuk 1 Guru BK.</div>
+    </div>
+</div>
+
+<!-- APLIKASI UTAMA -->
+<div id="appContainer">
+    <header class="header-app">
+        <div class="wrap">
+            <div class="brand">
+                <i class="fas fa-brain"></i>
+                <div><h1>SOSIO DIGITAL NaFaS BK</h1><span>Peta Pertemanan • Kolaborasi • Kepemimpinan</span></div>
+            </div>
+            <div class="user-info">
+                <span id="userNameDisplay">—</span>
+                <span class="badge"><i class="fas fa-check-circle"></i> Licensed</span>
+                <button class="btn-logout" onclick="logout()"><i class="fas fa-sign-out-alt"></i> Keluar</button>
+            </div>
+        </div>
+    </header>
+    
+    <nav class="nav-app">
+        <button id="navTeacher" class="active" onclick="showPage('teacher')"><i class="fas fa-chalkboard-teacher"></i> Guru BK</button>
+        <button id="navStudent" onclick="showPage('student')"><i class="fas fa-mobile-alt"></i> Mode HP</button>
+        <button id="navPaper" onclick="showPage('paper')"><i class="fas fa-file-alt"></i> Mode Kertas</button>
+        <button id="navResult" onclick="showPage('result')"><i class="fas fa-chart-bar"></i> Hasil</button>
+    </nav>
+    
+    <div class="main-app">
+        <!-- HALAMAN GURU BK -->
+        <div id="pageTeacher">
+            <div class="card-app">
+                <div class="title"><i class="fas fa-plus-circle"></i> Buat Sesi Sosiometri</div>
+                <div class="grid-form">
+                    <div class="form-group"><label>Sekolah</label><input id="school" placeholder="Nama sekolah"></div>
+                    <div class="form-group"><label>Kelas</label><input id="className" placeholder="Contoh: 9A"></div>
+                    <div class="form-group"><label>Tahun Ajaran</label><input id="year" value="2026/2027"></div>
+                    <div class="form-group"><label>Guru BK</label><input id="counselor" placeholder="Nama Guru BK"></div>
+                </div>
+                <div class="form-group">
+                    <label>Daftar Nama Siswa (satu nama per baris)</label>
+                    <textarea id="students" placeholder="Aisyah Putri&#10;Bima Aditya&#10;Citra Kirana"></textarea>
+                </div>
+                <div class="actions no-print">
+                    <button class="btn btn-success" onclick="createSession()"><i class="fas fa-save"></i> Buat Sesi</button>
+                </div>
+                <div id="teacherMsg"></div>
+            </div>
+            <div class="card-app">
+                <div class="title"><i class="fas fa-rocket"></i> Sesi Aktif</div>
+                <div id="sessionDisplay">Belum ada sesi.</div>
+            </div>
+        </div>
+        
+        <!-- HALAMAN SISWA -->
+        <div id="pageStudent" class="hidden">
+            <div class="card-app">
+                <div class="title"><i class="fas fa-mobile-alt"></i> Pengisian Siswa</div>
+                <div class="notif notif-warning"><i class="fas fa-lock"></i> Hasil hanya dapat dilihat Guru BK.</div>
+                <div class="form-group"><label>Kode Sesi</label><input id="studentCode" placeholder="Masukkan kode dari Guru BK"></div>
+                <div class="form-group"><label>Nama Kamu</label><select id="studentName"></select></div>
+                <div id="studentQuestions"></div>
+                <div class="actions no-print">
+                    <button class="btn btn-primary" onclick="submitStudent()"><i class="fas fa-paper-plane"></i> Kirim Jawaban</button>
+                </div>
+                <div id="studentMsg"></div>
+            </div>
+        </div>
+        
+        <!-- HALAMAN KERTAS -->
+        <div id="pagePaper" class="hidden">
+            <div class="card-app">
+                <div class="title"><i class="fas fa-file-alt"></i> Mode Tanpa HP</div>
+                <div class="notif notif-info"><i class="fas fa-info-circle"></i> Siswa mengisi lembar kertas, Guru memasukkan hasilnya di sini.</div>
+                <div id="paperEntries"></div>
+                <div class="actions no-print">
+                    <button class="btn btn-outline" onclick="loadPaperEntries()"><i class="fas fa-sync"></i> Muat Entri</button>
+                    <button class="btn btn-success" onclick="submitPaperEntries()"><i class="fas fa-cloud-upload-alt"></i> Simpan Semua</button>
+                </div>
+                <div id="paperMsg"></div>
+            </div>
+            <div class="card-app">
+                <div class="title"><i class="fas fa-print"></i> Lembar Sosiometri</div>
+                <div id="paperPrintSheet"></div>
+                <div class="actions no-print">
+                    <button class="btn btn-warning" onclick="printSheet()"><i class="fas fa-print"></i> Cetak Lembar</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- HALAMAN HASIL -->
+        <div id="pageResult" class="hidden">
+            <div class="card-app">
+                <div class="title"><i class="fas fa-chart-bar"></i> Hasil Sosiometri</div>
+                <div class="grid-form">
+                    <div class="form-group"><label>Kode Sesi</label><input id="resultCode"></div>
+                    <div class="form-group"><label>PIN Guru BK</label><input id="resultPin"></div>
+                </div>
+                <div class="actions no-print">
+                    <button class="btn btn-primary" onclick="viewResults()"><i class="fas fa-unlock"></i> Buka Hasil</button>
+                    <button class="btn btn-dark" onclick="printResults()"><i class="fas fa-print"></i> Cetak Hasil</button>
+                </div>
+                <div id="resultDisplay"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ============================================================
+// 🔑 KONFIGURASI URL
+// ============================================================
+
+const LICENSE_API_URL = 'https://script.google.com/macros/s/AKfycbxALeG37xGhPEFgbMYNHQo-2iNaC3g0gVpyEydNC4fsrFX0mDGnO2_Nw_SkZwfJ8Ng1/exec';
+const SERVER_URL = 'https://script.google.com/macros/s/AKfycbzHfa62A58BMYKVsBeq_CLV1HLh7S7UdSRfPmntFdGmf3R34-ZpYJcQksT_bJlE1enz/exec';
+
+// ============================================================
+// SISTEM LISENSI
+// ============================================================
+
+let licenseData = null;
+let session = null;
+
+// Cek lisensi tersimpan
+try {
+    const saved = localStorage.getItem('NAFAS_LICENSE_DATA');
+    if (saved) {
+        licenseData = JSON.parse(saved);
+        if (licenseData && licenseData.expiry && new Date(licenseData.expiry) > new Date()) {
+            enterApp(licenseData);
+        }
+    }
+} catch(e) {}
+
+// ============================================================
+// FUNGSI AKTIVASI
+// ============================================================
+
 async function activateLicense() {
     const name = document.getElementById('licenseName').value.trim();
     const school = document.getElementById('licenseSchool').value.trim();
@@ -5,8 +258,11 @@ async function activateLicense() {
     
     const errorEl = document.getElementById('licenseError');
     const successEl = document.getElementById('licenseSuccess');
+    const loadingEl = document.getElementById('loadingMsg');
+    
     errorEl.classList.remove('show');
     successEl.classList.remove('show');
+    loadingEl.classList.remove('show');
     
     if (!name || !school || !code) {
         errorEl.textContent = '⚠️ Semua field harus diisi.';
@@ -14,70 +270,537 @@ async function activateLicense() {
         return;
     }
     
-    // Validasi format kode (NFS-XXXX-XXXX)
-    if (!/^NFS-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(code) && !code.startsWith('TEST-')) {
-        errorEl.textContent = '⚠️ Format kode tidak valid. Contoh: NFS-ABCD-1234';
-        errorEl.classList.add('show');
-        return;
-    }
+    loadingEl.textContent = '⏳ Memeriksa kode lisensi...';
+    loadingEl.classList.add('show');
     
     try {
-        // 1. Cek validasi kode
-        const validateResponse = await fetch(LICENSE_API_URL, {
+        // VALIDASI
+        const res = await fetch(LICENSE_API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                action: 'validateLicense',
-                license: code
-            })
+            body: JSON.stringify({ action: 'validateLicense', license: code })
         });
+        const result = await res.json();
         
-        const validateResult = await validateResponse.json();
-        
-        if (validateResult.status !== 'OK') {
-            errorEl.textContent = validateResult.message;
+        if (result.status !== 'OK') {
+            loadingEl.classList.remove('show');
+            errorEl.textContent = result.message;
             errorEl.classList.add('show');
             return;
         }
         
-        // 2. Aktivasi
-        const activateResponse = await fetch(LICENSE_API_URL, {
+        // AKTIVASI
+        loadingEl.textContent = '⏳ Mengaktivasi lisensi...';
+        const res2 = await fetch(LICENSE_API_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                action: 'activateLicense',
-                license: code,
-                nama: name,
-                sekolah: school,
-                email: '' // Bisa tambahkan email jika ada di form
-            })
+            body: JSON.stringify({ action: 'activateLicense', license: code, nama: name, sekolah: school })
         });
+        const result2 = await res2.json();
         
-        const activateResult = await activateResponse.json();
+        loadingEl.classList.remove('show');
         
-        if (activateResult.status === 'OK') {
-            const licenseInfo = {
+        if (result2.status === 'OK') {
+            const info = {
                 name: name,
                 school: school,
                 code: code,
                 activated: new Date().toISOString(),
                 expiry: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
             };
-            
-            localStorage.setItem('NAFAS_LICENSE_DATA', JSON.stringify(licenseInfo));
-            localStorage.setItem('NAFAS_LICENSE_USED', code);
-            
-            successEl.textContent = activateResult.message;
+            localStorage.setItem('NAFAS_LICENSE_DATA', JSON.stringify(info));
+            successEl.textContent = result2.message;
             successEl.classList.add('show');
-            
-            setTimeout(() => enterApp(licenseInfo), 1000);
+            setTimeout(() => enterApp(info), 1000);
         } else {
-            errorEl.textContent = activateResult.message;
+            errorEl.textContent = result2.message;
             errorEl.classList.add('show');
         }
     } catch(e) {
-        errorEl.textContent = '❌ Gagal terhubung ke server lisensi. Periksa koneksi internet.';
+        loadingEl.classList.remove('show');
+        errorEl.textContent = '❌ Gagal terhubung ke server. Periksa internet.';
         errorEl.classList.add('show');
-        console.error('Error:', e);
     }
 }
+
+function enterApp(data) {
+    licenseData = data;
+    document.getElementById('licenseOverlay').classList.add('hidden');
+    document.getElementById('appContainer').classList.add('active');
+    document.getElementById('userNameDisplay').textContent = data.name;
+    document.getElementById('school').value = data.school || '';
+    document.getElementById('counselor').value = data.name || '';
+    loadSavedSession();
+    showPage('teacher');
+}
+
+function logout() {
+    if (confirm('Keluar dari aplikasi?')) {
+        document.getElementById('appContainer').classList.remove('active');
+        document.getElementById('licenseOverlay').classList.remove('hidden');
+        document.getElementById('licenseName').value = '';
+        document.getElementById('licenseSchool').value = '';
+        document.getElementById('licenseCode').value = '';
+        document.getElementById('licenseError').classList.remove('show');
+        document.getElementById('licenseSuccess').classList.remove('show');
+    }
+}
+
+// ============================================================
+// FUNGSI LAINNYA (disingkat karena sudah ada)
+// ============================================================
+
+function showPage(page) {
+    ['teacher','student','paper','result'].forEach(p => {
+        document.getElementById('page' + p.charAt(0).toUpperCase() + p.slice(1)).classList.toggle('hidden', p !== page);
+    });
+    ['navTeacher','navStudent','navPaper','navResult'].forEach(n => {
+        document.getElementById(n).classList.remove('active');
+    });
+    document.getElementById('nav' + page.charAt(0).toUpperCase() + page.slice(1)).classList.add('active');
+    if (page === 'student') loadStudentPage();
+    if (page === 'paper') loadPaperEntries();
+}
+
+function note(id, msg, type) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const types = { success:'notif-success', warning:'notif-warning', error:'notif-error', info:'notif-info' };
+    el.innerHTML = '<div class="notif ' + (types[type] || types.info) + '">' + msg + '</div>';
+}
+
+function esc(s) {
+    return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+}
+
+function copyText(text) {
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(() => alert('✅ Berhasil disalin!')).catch(() => {
+            const a = document.createElement('textarea');
+            a.value = text;
+            document.body.appendChild(a);
+            a.select();
+            document.execCommand('copy');
+            a.remove();
+            alert('✅ Berhasil disalin!');
+        });
+    } else {
+        const a = document.createElement('textarea');
+        a.value = text;
+        document.body.appendChild(a);
+        a.select();
+        document.execCommand('copy');
+        a.remove();
+        alert('✅ Berhasil disalin!');
+    }
+}
+
+function saveSession() {
+    if (session) localStorage.setItem('NAFAS_SESSION_DATA', JSON.stringify(session));
+}
+
+function loadSavedSession() {
+    try {
+        const data = localStorage.getItem('NAFAS_SESSION_DATA');
+        if (data) {
+            session = JSON.parse(data);
+            renderSessionDisplay();
+        }
+    } catch(e) { session = null; }
+}
+
+function renderSessionDisplay() {
+    const container = document.getElementById('sessionDisplay');
+    if (!session || !session.code) {
+        container.innerHTML = '<div class="notif notif-info">Belum ada sesi. Buat sesi di atas.</div>';
+        return;
+    }
+    const url = location.href.split('#')[0] + '#sesi=' + encodeURIComponent(session.code);
+    const qr = 'https://api.qrserver.com/v1/create-qr-code/?size=160x160&margin=8&data=' + encodeURIComponent(url);
+    const done = session.submittedIds ? session.submittedIds.length : 0;
+    const total = session.students ? session.students.length : 0;
+    container.innerHTML = `
+        <div class="session-box">
+            <div class="session-item"><div class="label">Kode Sesi</div><div class="value">${esc(session.code)}</div><button class="btn btn-outline" style="padding:4px 10px;font-size:10px;margin-top:4px;" onclick="copyText('${esc(session.code)}')"><i class="fas fa-copy"></i> Salin</button></div>
+            <div class="session-item"><div class="label">PIN Guru</div><div class="value-monochrome">${esc(session.pin || '—')}</div><button class="btn btn-outline" style="padding:4px 10px;font-size:10px;margin-top:4px;" onclick="copyText('${esc(session.pin || '')}')"><i class="fas fa-copy"></i> Salin</button></div>
+            <div class="session-item"><div class="label">Status</div><div class="value-monochrome">${done}/${total}</div><button class="btn btn-outline" style="padding:4px 10px;font-size:10px;margin-top:4px;" onclick="refreshStatus()"><i class="fas fa-sync"></i> Perbarui</button></div>
+        </div>
+        <div class="share-area">
+            <strong><i class="fas fa-share-alt"></i> Bagikan ke Siswa</strong>
+            <div class="share-row"><input id="shareLink" readonly value="${esc(url)}"><button class="btn btn-outline" onclick="copyText(document.getElementById('shareLink').value)"><i class="fas fa-copy"></i> Salin Link</button></div>
+            <div class="qr-box"><img src="${qr}"><p style="font-size:10px;color:#718096;margin-top:4px;">Scan QR untuk mengisi</p></div>
+        </div>
+        <div class="status-bar"><span><strong>${done}</strong> dari <strong>${total}</strong> siswa sudah mengisi</span></div>
+    `;
+}
+
+async function createSession() {
+    const school = document.getElementById('school').value.trim();
+    const className = document.getElementById('className').value.trim();
+    const year = document.getElementById('year').value.trim();
+    const counselor = document.getElementById('counselor').value.trim();
+    const names = document.getElementById('students').value.split('\n').map(x => x.trim()).filter(Boolean);
+    
+    if (names.length < 2 || !className) {
+        note('teacherMsg', '⚠️ Masukkan minimal 2 nama siswa dan nama kelas.', 'warning');
+        return;
+    }
+    
+    note('teacherMsg', '⏳ Membuat sesi...', 'info');
+    
+    try {
+        const students = names.map((name, i) => ({ id: 'S' + (i + 1), name }));
+        const res = await fetch(SERVER_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action: 'createSession', school, className, year, counselor, students })
+        });
+        const result = await res.json();
+        if (result.status !== 'OK') {
+            note('teacherMsg', '❌ ' + (result.message || 'Gagal'), 'error');
+            return;
+        }
+        session = { code: result.code, pin: result.pin, students, school, className, year, counselor, submittedIds: [] };
+        saveSession();
+        renderSessionDisplay();
+        note('teacherMsg', '✅ Sesi berhasil dibuat! Kode: ' + result.code, 'success');
+        loadPaperEntries();
+    } catch(e) {
+        note('teacherMsg', '❌ Gagal terhubung ke server.', 'error');
+    }
+}
+
+async function loadStudentPage() {
+    const code = location.hash.startsWith('#sesi=') ? decodeURIComponent(location.hash.slice(6)) : document.getElementById('studentCode').value.trim();
+    if (!code) {
+        document.getElementById('studentQuestions').innerHTML = '<div class="notif notif-info">Masukkan kode sesi.</div>';
+        return;
+    }
+    try {
+        const res = await fetch(SERVER_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action: 'getSession', code })
+        });
+        const result = await res.json();
+        if (result.status !== 'OK') {
+            document.getElementById('studentQuestions').innerHTML = '<div class="notif notif-error">❌ ' + esc(result.message) + '</div>';
+            return;
+        }
+        session = result.session;
+        document.getElementById('studentCode').value = code;
+        const opts = '<option value="">— Pilih nama —</option>' + session.students.map(s => '<option value="' + esc(s.id) + '">' + esc(s.name) + '</option>').join('');
+        document.getElementById('studentName').innerHTML = opts;
+        document.getElementById('studentQuestions').innerHTML = buildQuestions();
+        document.querySelectorAll('.ch-select').forEach(el => el.innerHTML = opts);
+    } catch(e) {
+        document.getElementById('studentQuestions').innerHTML = '<div class="notif notif-error">❌ Gagal terhubung.</div>';
+    }
+}
+
+function buildQuestions() {
+    return `
+        <div class="card-app" style="border:2px solid #e2e8f0;padding:16px;margin-top:10px;">
+            <div style="font-weight:700;color:#1a2a6c;">❤️ PERTEMANAN (Pilih 2)</div>
+            <div class="form-group"><label>Pilihan 1</label><select class="ch-select heart"></select><label>Alasan</label><textarea class="ch-reason heart" placeholder="Tulis alasan..."></textarea></div>
+            <div class="form-group"><label>Pilihan 2</label><select class="ch-select heart"></select><label>Alasan</label><textarea class="ch-reason heart" placeholder="Tulis alasan..."></textarea></div>
+        </div>
+        <div class="card-app" style="border:2px solid #e2e8f0;padding:16px;margin-top:10px;">
+            <div style="font-weight:700;color:#1a2a6c;">🤝 KERJA SAMA (Pilih 2)</div>
+            <div class="form-group"><label>Pilihan 1</label><select class="ch-select coop"></select><label>Alasan</label><textarea class="ch-reason coop" placeholder="Tulis alasan..."></textarea></div>
+            <div class="form-group"><label>Pilihan 2</label><select class="ch-select coop"></select><label>Alasan</label><textarea class="ch-reason coop" placeholder="Tulis alasan..."></textarea></div>
+        </div>
+        <div class="card-app" style="border:2px solid #e2e8f0;padding:16px;margin-top:10px;">
+            <div style="font-weight:700;color:#1a2a6c;">⭐ KEPEMIMPINAN (Pilih 1)</div>
+            <div class="form-group"><label>Pilihan</label><select class="ch-select lead"></select><label>Alasan</label><textarea class="ch-reason lead" placeholder="Tulis alasan..."></textarea></div>
+        </div>
+        <div class="card-app" style="border:2px solid #e2e8f0;padding:16px;margin-top:10px;">
+            <div style="font-weight:700;color:#1a2a6c;">🔎 RELASI KURANG NYAMAN</div>
+            <div class="form-group"><label>Pilihan</label><select class="ch-select uncomfortable"><option value="">— Tidak ada —</option></select><label>Alasan</label><textarea class="ch-reason uncomfortable" placeholder="Tulis alasan..."></textarea></div>
+        </div>
+    `;
+}
+
+function getVals(cls) { return [...document.querySelectorAll('select.ch-select.' + cls)].map(x => x.value); }
+function getReasons(cls) { return [...document.querySelectorAll('textarea.ch-reason.' + cls)].map(x => x.value.trim()); }
+
+async function submitStudent() {
+    const me = document.getElementById('studentName').value;
+    const code = document.getElementById('studentCode').value.trim();
+    const heart = getVals('heart'), coop = getVals('coop'), lead = getVals('lead'), uncomfortable = getVals('uncomfortable').filter(Boolean);
+    const hr = getReasons('heart'), cr = getReasons('coop'), lr = getReasons('lead'), ur = getReasons('uncomfortable').filter(Boolean);
+    const all = [...heart, ...coop, ...lead, ...uncomfortable];
+    const allReasons = [...hr, ...cr, ...lr, ...ur];
+    
+    if (!me) { note('studentMsg', '⚠️ Pilih nama kamu.', 'warning'); return; }
+    if (heart.some(x => !x) || coop.some(x => !x) || !lead[0] || allReasons.some(x => !x)) {
+        note('studentMsg', '⚠️ Lengkapi semua pilihan dan alasan.', 'warning');
+        return;
+    }
+    if (all.includes(me)) { note('studentMsg', '⚠️ Tidak boleh memilih diri sendiri.', 'warning'); return; }
+    if (new Set(heart).size < 2 || new Set(coop).size < 2) {
+        note('studentMsg', '⚠️ Dua pilihan harus berbeda.', 'warning');
+        return;
+    }
+    
+    note('studentMsg', '⏳ Mengirim...', 'info');
+    try {
+        const res = await fetch(SERVER_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action: 'submitResponse', code, respondent: me, heart, heartReason: hr, coop, coopReason: cr, lead, leadReason: lr, uncomfortable, uncomfortableReason: ur })
+        });
+        const result = await res.json();
+        if (result.status === 'OK') {
+            note('studentMsg', '✅ Jawaban berhasil dikirim!', 'success');
+            document.querySelectorAll('.ch-select').forEach(el => el.value = '');
+            document.querySelectorAll('.ch-reason').forEach(el => el.value = '');
+            document.getElementById('studentName').value = '';
+        } else {
+            note('studentMsg', '❌ ' + esc(result.message), 'error');
+        }
+    } catch(e) {
+        note('studentMsg', '❌ Gagal mengirim.', 'error');
+    }
+}
+
+function loadPaperEntries() {
+    if (!session || !session.students) {
+        document.getElementById('paperEntries').innerHTML = '<div class="notif notif-info">Belum ada sesi.</div>';
+        document.getElementById('paperPrintSheet').innerHTML = '';
+        return;
+    }
+    const opts = '<option value="">— Pilih —</option>' + session.students.map(s => '<option value="' + esc(s.id) + '">' + esc(s.name) + '</option>').join('');
+    document.getElementById('paperEntries').innerHTML = session.students.map((s, i) => {
+        const draft = loadDraft(s.id);
+        return `
+            <div class="card-app" style="border:2px solid #e2e8f0;padding:14px;margin-bottom:8px;">
+                <div style="font-weight:700;font-size:13px;color:#1a2a6c;">${i+1}. ${esc(s.name)}</div>
+                <div class="grid-form" style="grid-template-columns:1fr 1fr;">
+                    <div><label style="font-size:10px;">❤️ Pertemanan 1</label><select class="paper-select heart" data-id="${esc(s.id)}">${opts}</select><input class="paper-reason heart" value="${draft?.heartReason?.[0] || ''}" placeholder="Alasan" style="width:100%;padding:6px;border:1px solid #e2e8f0;border-radius:6px;font-size:11px;margin-top:2px;"></div>
+                    <div><label style="font-size:10px;">❤️ Pertemanan 2</label><select class="paper-select heart" data-id="${esc(s.id)}">${opts}</select><input class="paper-reason heart" value="${draft?.heartReason?.[1] || ''}" placeholder="Alasan" style="width:100%;padding:6px;border:1px solid #e2e8f0;border-radius:6px;font-size:11px;margin-top:2px;"></div>
+                    <div><label style="font-size:10px;">🤝 Kerja Sama 1</label><select class="paper-select coop" data-id="${esc(s.id)}">${opts}</select><input class="paper-reason coop" value="${draft?.coopReason?.[0] || ''}" placeholder="Alasan" style="width:100%;padding:6px;border:1px solid #e2e8f0;border-radius:6px;font-size:11px;margin-top:2px;"></div>
+                    <div><label style="font-size:10px;">🤝 Kerja Sama 2</label><select class="paper-select coop" data-id="${esc(s.id)}">${opts}</select><input class="paper-reason coop" value="${draft?.coopReason?.[1] || ''}" placeholder="Alasan" style="width:100%;padding:6px;border:1px solid #e2e8f0;border-radius:6px;font-size:11px;margin-top:2px;"></div>
+                    <div><label style="font-size:10px;">⭐ Kepemimpinan</label><select class="paper-select lead" data-id="${esc(s.id)}">${opts}</select><input class="paper-reason lead" value="${draft?.leadReason?.[0] || ''}" placeholder="Alasan" style="width:100%;padding:6px;border:1px solid #e2e8f0;border-radius:6px;font-size:11px;margin-top:2px;"></div>
+                    <div><label style="font-size:10px;">🔎 Kurang Nyaman</label><select class="paper-select uncomfortable" data-id="${esc(s.id)}"><option value="">— Tidak ada —</option>${opts.replace('<option value="">— Pilih —</option>', '')}</select><input class="paper-reason uncomfortable" value="${draft?.uncomfortableReason?.[0] || ''}" placeholder="Alasan" style="width:100%;padding:6px;border:1px solid #e2e8f0;border-radius:6px;font-size:11px;margin-top:2px;"></div>
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    document.querySelectorAll('.paper-select').forEach(el => {
+        const id = el.dataset.id;
+        const draft = loadDraft(id);
+        if (draft) {
+            const cls = el.className.split(' ')[1];
+            const idx = [...document.querySelectorAll('.paper-select.' + cls)].indexOf(el);
+            const values = draft[cls] || [];
+            if (values[idx]) el.value = values[idx];
+        }
+    });
+    
+    document.querySelectorAll('.paper-select, .paper-reason').forEach(el => {
+        el.addEventListener('change', () => {
+            const card = el.closest('.card-app');
+            const selectors = card.querySelectorAll('.paper-select');
+            const reasons = card.querySelectorAll('.paper-reason');
+            const id = selectors[0].dataset.id;
+            saveDraft(id, {
+                saved: false,
+                heart: selectors[0].value && selectors[1].value ? [selectors[0].value, selectors[1].value] : [],
+                heartReason: [reasons[0].value.trim(), reasons[1].value.trim()],
+                coop: selectors[2].value && selectors[3].value ? [selectors[2].value, selectors[3].value] : [],
+                coopReason: [reasons[2].value.trim(), reasons[3].value.trim()],
+                lead: selectors[4].value ? [selectors[4].value] : [],
+                leadReason: [reasons[4].value.trim()],
+                uncomfortable: selectors[5].value ? [selectors[5].value] : [],
+                uncomfortableReason: [reasons[5].value.trim()]
+            });
+        });
+    });
+    
+    document.getElementById('paperPrintSheet').innerHTML = `
+        <div class="print-sheet" style="background:#fff;padding:12px;border:1px solid #e2e8f0;border-radius:8px;font-size:11px;">
+            <div style="text-align:center;border-bottom:2px solid #1a2a6c;padding-bottom:8px;margin-bottom:8px;">
+                <h1 style="font-size:16px;color:#1a2a6c;">SOSIO DIGITAL NaFaS BK</h1>
+                <h2 style="font-size:13px;color:#4a5568;">LEMBAR SOSIOMETRI</h2>
+                <div style="display:flex;justify-content:space-between;font-size:10px;margin-top:4px;"><span>Nama: _________________________________</span><span>Kelas: ${esc(session.className || '________________')}</span></div>
+                <div style="display:flex;justify-content:space-between;font-size:10px;"><span>Sesi: ${esc(session.code || '________________')}</span><span>Tanggal: _________________</span></div>
+            </div>
+            <div style="font-size:9px;background:#f8fafc;padding:6px;border-radius:4px;margin-bottom:6px;"><b>Petunjuk:</b> Jawab dengan jujur. Pilih nama teman sesuai pertanyaan. Berikan alasan singkat.</div>
+            <div style="border:1px solid #e2e8f0;border-radius:6px;padding:6px;margin:4px 0;">
+                <h3 style="font-size:11px;margin:0 0 2px;color:#1a2a6c;">A. PERTEMANAN (Pilih 2)</h3>
+                <div style="font-size:9px;margin:2px 0;min-height:14px;border-bottom:1px dotted #e2e8f0;padding-bottom:2px;">1) ___________________ &nbsp; Alasan: _________________________________</div>
+                <div style="font-size:9px;margin:2px 0;min-height:14px;border-bottom:1px dotted #e2e8f0;padding-bottom:2px;">2) ___________________ &nbsp; Alasan: _________________________________</div>
+            </div>
+            <div style="border:1px solid #e2e8f0;border-radius:6px;padding:6px;margin:4px 0;">
+                <h3 style="font-size:11px;margin:0 0 2px;color:#1a2a6c;">B. KERJA SAMA (Pilih 2)</h3>
+                <div style="font-size:9px;margin:2px 0;min-height:14px;border-bottom:1px dotted #e2e8f0;padding-bottom:2px;">1) ___________________ &nbsp; Alasan: _________________________________</div>
+                <div style="font-size:9px;margin:2px 0;min-height:14px;border-bottom:1px dotted #e2e8f0;padding-bottom:2px;">2) ___________________ &nbsp; Alasan: _________________________________</div>
+            </div>
+            <div style="border:1px solid #e2e8f0;border-radius:6px;padding:6px;margin:4px 0;">
+                <h3 style="font-size:11px;margin:0 0 2px;color:#1a2a6c;">C. KEPEMIMPINAN (Pilih 1)</h3>
+                <div style="font-size:9px;margin:2px 0;min-height:14px;border-bottom:1px dotted #e2e8f0;padding-bottom:2px;">Nama: ________________ &nbsp; Alasan: _________________________________</div>
+            </div>
+            <div style="border:1px solid #e2e8f0;border-radius:6px;padding:6px;margin:4px 0;">
+                <h3 style="font-size:11px;margin:0 0 2px;color:#1a2a6c;">D. RELASI KURANG NYAMAN</h3>
+                <div style="font-size:9px;margin:2px 0;min-height:14px;border-bottom:1px dotted #e2e8f0;padding-bottom:2px;">Nama: ________________ &nbsp; Alasan: _________________________________</div>
+            </div>
+            <div style="text-align:center;font-size:7px;color:#a0aec0;margin-top:6px;border-top:1px solid #e2e8f0;padding-top:4px;">SOSIO DIGITAL NaFaS BK • Layanan Bimbingan dan Konseling</div>
+        </div>
+    `;
+}
+
+function loadDraft(id) {
+    try { return JSON.parse(localStorage.getItem('NAFAS_DRAFT_' + session.code + '_' + id) || 'null'); } catch(e) { return null; }
+}
+function saveDraft(id, data) {
+    try { localStorage.setItem('NAFAS_DRAFT_' + session.code + '_' + id, JSON.stringify(data)); } catch(e) {}
+}
+
+async function submitPaperEntries() {
+    if (!session || !session.students) { note('paperMsg', '⚠️ Belum ada sesi.', 'warning'); return; }
+    const cards = document.querySelectorAll('#paperEntries .card-app');
+    note('paperMsg', '⏳ Menyimpan...', 'info');
+    let saved = 0;
+    for (let i = 0; i < cards.length; i++) {
+        const card = cards[i];
+        const selectors = card.querySelectorAll('.paper-select');
+        const reasons = card.querySelectorAll('.paper-reason');
+        const id = selectors[0].dataset.id;
+        const heart = selectors[0].value && selectors[1].value ? [selectors[0].value, selectors[1].value] : [];
+        const coop = selectors[2].value && selectors[3].value ? [selectors[2].value, selectors[3].value] : [];
+        const lead = selectors[4].value ? [selectors[4].value] : [];
+        const uncomfortable = selectors[5].value ? [selectors[5].value] : [];
+        const hr = [reasons[0].value.trim(), reasons[1].value.trim()];
+        const cr = [reasons[2].value.trim(), reasons[3].value.trim()];
+        const lr = [reasons[4].value.trim()];
+        const ur = [reasons[5].value.trim()];
+        if (heart.length !== 2 || coop.length !== 2 || !lead.length || hr.some(x => !x) || cr.some(x => !x) || !lr[0]) {
+            saveDraft(id, { saved: false, heart, heartReason: hr, coop, coopReason: cr, lead, leadReason: lr, uncomfortable, uncomfortableReason: ur });
+            note('paperMsg', '⚠️ Entri ' + (i+1) + ' belum lengkap.', 'warning');
+            return;
+        }
+        const draft = loadDraft(id);
+        if (draft && draft.saved) { saved++; continue; }
+        try {
+            const res = await fetch(SERVER_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify({ action: 'submitResponse', code: session.code, respondent: id, heart, heartReason: hr, coop, coopReason: cr, lead, leadReason: lr, uncomfortable, uncomfortableReason: ur })
+            });
+            const result = await res.json();
+            if (result.status === 'OK' || (result.message && result.message.includes('sudah diterima'))) {
+                clearDraft(id); saveDraft(id, { saved: true }); saved++;
+            } else {
+                saveDraft(id, { saved: false, heart, heartReason: hr, coop, coopReason: cr, lead, leadReason: lr, uncomfortable, uncomfortableReason: ur });
+                note('paperMsg', '❌ Entri ' + (i+1) + ' gagal.', 'error');
+                return;
+            }
+        } catch(e) {
+            saveDraft(id, { saved: false, heart, heartReason: hr, coop, coopReason: cr, lead, leadReason: lr, uncomfortable, uncomfortableReason: ur });
+            note('paperMsg', '❌ Error entri ' + (i+1), 'error');
+            return;
+        }
+    }
+    note('paperMsg', '✅ ' + saved + ' entri berhasil disimpan!', 'success');
+    refreshStatus();
+}
+
+function clearDraft(id) {
+    try { localStorage.removeItem('NAFAS_DRAFT_' + session.code + '_' + id); } catch(e) {}
+}
+
+function printSheet() {
+    if (!session) { alert('Buat sesi terlebih dahulu.'); return; }
+    window.print();
+}
+
+async function viewResults() {
+    const code = document.getElementById('resultCode').value.trim();
+    const pin = document.getElementById('resultPin').value.trim();
+    if (!code || !pin) {
+        document.getElementById('resultDisplay').innerHTML = '<div class="notif notif-warning">⚠️ Masukkan kode dan PIN.</div>';
+        return;
+    }
+    document.getElementById('resultDisplay').innerHTML = '<div class="notif notif-info">⏳ Memuat...</div>';
+    try {
+        const res = await fetch(SERVER_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action: 'getResults', code, pin })
+        });
+        const result = await res.json();
+        if (result.status !== 'OK') {
+            document.getElementById('resultDisplay').innerHTML = '<div class="notif notif-error">❌ ' + esc(result.message) + '</div>';
+            return;
+        }
+        const rs = result.responses || [], st = result.session.students || [];
+        if (rs.length === 0) {
+            document.getElementById('resultDisplay').innerHTML = '<div class="notif notif-info">Belum ada siswa mengisi.</div>';
+            return;
+        }
+        const stats = { heart: {}, coop: {}, lead: {}, uncomfortable: {} };
+        st.forEach(s => ['heart','coop','lead','uncomfortable'].forEach(k => stats[k][s.id] = 0));
+        rs.forEach(x => ['heart','coop','lead','uncomfortable'].forEach(k => {
+            (x[k] || []).forEach(id => stats[k][id] = (stats[k][id] || 0) + 1);
+        }));
+        const nameMap = {}; st.forEach(s => nameMap[s.id] = s.name);
+        
+        let html = '<div class="notif notif-success">✅ ' + rs.length + ' dari ' + st.length + ' siswa sudah mengisi.</div>';
+        ['heart','coop','lead','uncomfortable'].forEach(key => {
+            const icons = { heart:'❤️ Pertemanan', coop:'🤝 Kerja Sama', lead:'⭐ Kepemimpinan', uncomfortable:'🔎 Kurang Nyaman' };
+            const sorted = st.map(s => ({ name: s.name, count: stats[key][s.id] || 0 }))
+                .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+            const max = Math.max(1, ...sorted.map(x => x.count));
+            html += '<div class="card-app" style="border:2px solid #e2e8f0;padding:14px;margin-top:8px;"><div style="font-weight:700;font-size:13px;color:#1a2a6c;">' + icons[key] + '</div>';
+            sorted.forEach((x, i) => {
+                html += `<div style="display:flex;align-items:center;gap:6px;padding:3px 0;border-bottom:1px solid #f0f0f0;font-size:11px;"><span style="font-weight:600;min-width:20px;">${i+1}.</span><span style="flex:1;">${esc(x.name)}</span><div style="flex:1;height:5px;background:#e2e8f0;border-radius:3px;max-width:80px;"><div style="height:100%;width:${Math.round((x.count/max)*100)}%;background:linear-gradient(135deg,#667eea,#764ba2);border-radius:3px;"></div></div><span style="font-weight:600;color:#1a2a6c;min-width:25px;text-align:right;">${x.count}</span></div>`;
+            });
+            html += '</div>';
+        });
+        document.getElementById('resultDisplay').innerHTML = html;
+    } catch(e) {
+        document.getElementById('resultDisplay').innerHTML = '<div class="notif notif-error">❌ Gagal memuat hasil.</div>';
+    }
+}
+
+function printResults() {
+    const content = document.getElementById('resultDisplay').innerHTML;
+    if (!content || content.includes('Masukkan kode')) {
+        alert('Silakan buka hasil terlebih dahulu.');
+        return;
+    }
+    const w = window.open('', '_blank', 'width=800,height=600');
+    if (!w) { alert('Izinkan pop-up.'); return; }
+    w.document.write('<html><head><title>Hasil Sosiometri</title><style>body{font-family:Arial;padding:20px;font-size:12px;}@page{margin:8mm;}</style></head><body><h1 style="font-size:18px;text-align:center;">SOSIO DIGITAL NaFaS BK</h1><h2 style="font-size:14px;text-align:center;">HASIL SOSIOMETRI</h2>' + content + '<script>window.onload=function(){setTimeout(function(){window.print()},600)}<\/script></body></html>');
+    w.document.close();
+}
+
+async function refreshStatus() {
+    if (!session || !session.code) return;
+    try {
+        const res = await fetch(SERVER_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({ action: 'getResults', code: session.code, pin: session.pin })
+        });
+        const result = await res.json();
+        if (result.status === 'OK') {
+            const answered = {};
+            (result.responses || []).forEach(x => answered[String(x.respondent)] = true);
+            session.submittedIds = (session.students || []).filter(s => answered[String(s.id)]).map(s => String(s.id));
+            saveSession();
+            renderSessionDisplay();
+        }
+    } catch(e) {}
+}
+
+// INIT
+if (licenseData) enterApp(licenseData);
+if (location.hash.startsWith('#sesi=')) {
+    setTimeout(() => { showPage('student'); loadStudentPage(); }, 500);
+}
+</script>
+</body>
+</html>
