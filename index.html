@@ -25,8 +25,6 @@
         .license-card .error-msg.show { display:block; }
         .license-card .success-msg { padding:12px; background:#f0fdf4; border-radius:8px; color:#16a34a; font-size:13px; margin-top:10px; display:none; }
         .license-card .success-msg.show { display:block; }
-        .license-card .loading-msg { padding:12px; background:#eff6ff; border-radius:8px; color:#2563eb; font-size:13px; margin-top:10px; display:none; }
-        .license-card .loading-msg.show { display:block; }
         .license-card .info { text-align:center; font-size:11px; color:#a0aec0; margin-top:14px; }
         
         #appContainer { display:none; }
@@ -110,7 +108,6 @@
             <i class="fas fa-unlock"></i> Aktivasi Aplikasi
         </button>
         
-        <div id="loadingMsg" class="loading-msg">⏳ Memeriksa kode...</div>
         <div id="licenseError" class="error-msg"></div>
         <div id="licenseSuccess" class="success-msg"></div>
         
@@ -223,14 +220,35 @@
 
 <script>
 // ============================================================
-// 🔑 KONFIGURASI URL
+// 🔑 KONFIGURASI LISENSI (DI SINI TEMPATNYA!)
 // ============================================================
 
-const LICENSE_API_URL = 'https://script.google.com/macros/s/AKfycbxsx7A7dKMFj518BztBsYJNomlJbCQ9kPFdiOW7NQBF3wAmqb-mV5rqN92m4VMW_Jpb/exec';
-const SERVER_URL = 'https://script.google.com/macros/s/AKfycbzHfa62A58BMYKVsBeq_CLV1HLh7S7UdSRfPmntFdGmf3R34-ZpYJcQksT_bJlE1enz/exec';
+// ★★★ DAFTAR KODE LISENSI YANG VALID ★★★
+// Tambahkan semua kode lisensi yang sudah Anda jual di sini
+const VALID_LICENSES = [
+    'TEST-NFS-001',
+    'NFS-D6QG-98EH',
+    'NFS-TJUL-6MJN',
+    'NFS-W7HS-YEQZ',
+    'NFS-CBNL-ZP4Z',
+    'NFS-WM6B-HCR6',
+    'NFS-S3RE-544C',
+    'NFS-V4QG-99P2',
+    'NFS-9RKW-YAV6',
+    'NFS-FWYK-D7SJ',
+    'NFS-DYNH-77MD'
+];
+
+// ★★★ DAFTAR KODE YANG SUDAH TERPAKAI ★★★
+// Pindahkan kode dari VALID_LICENSES ke sini setelah digunakan
+const USED_LICENSES = [
+    'NFS-DNYE-V84Y',
+    'NFS-QTWB-J4EE',
+    'NFS-7C9D-PN68'
+];
 
 // ============================================================
-// SISTEM LISENSI
+// SISTEM LISENSI (TANPA SERVER!)
 // ============================================================
 
 let licenseData = null;
@@ -248,21 +266,19 @@ try {
 } catch(e) {}
 
 // ============================================================
-// FUNGSI AKTIVASI
+// FUNGSI AKTIVASI - LANGSUNG CEK DI SINI
 // ============================================================
 
-async function activateLicense() {
+function activateLicense() {
     const name = document.getElementById('licenseName').value.trim();
     const school = document.getElementById('licenseSchool').value.trim();
     const code = document.getElementById('licenseCode').value.trim().toUpperCase();
     
     const errorEl = document.getElementById('licenseError');
     const successEl = document.getElementById('licenseSuccess');
-    const loadingEl = document.getElementById('loadingMsg');
     
     errorEl.classList.remove('show');
     successEl.classList.remove('show');
-    loadingEl.classList.remove('show');
     
     if (!name || !school || !code) {
         errorEl.textContent = '⚠️ Semua field harus diisi.';
@@ -270,57 +286,39 @@ async function activateLicense() {
         return;
     }
     
-    loadingEl.textContent = '⏳ Memeriksa kode lisensi...';
-    loadingEl.classList.add('show');
-    
-    try {
-        // VALIDASI
-        const res = await fetch(LICENSE_API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'validateLicense', license: code })
-        });
-        const result = await res.json();
-        
-        if (result.status !== 'OK') {
-            loadingEl.classList.remove('show');
-            errorEl.textContent = result.message;
-            errorEl.classList.add('show');
-            return;
-        }
-        
-        // AKTIVASI
-        loadingEl.textContent = '⏳ Mengaktivasi lisensi...';
-        const res2 = await fetch(LICENSE_API_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'activateLicense', license: code, nama: name, sekolah: school })
-        });
-        const result2 = await res2.json();
-        
-        loadingEl.classList.remove('show');
-        
-        if (result2.status === 'OK') {
-            const info = {
-                name: name,
-                school: school,
-                code: code,
-                activated: new Date().toISOString(),
-                expiry: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
-            };
-            localStorage.setItem('NAFAS_LICENSE_DATA', JSON.stringify(info));
-            successEl.textContent = result2.message;
-            successEl.classList.add('show');
-            setTimeout(() => enterApp(info), 1000);
-        } else {
-            errorEl.textContent = result2.message;
-            errorEl.classList.add('show');
-        }
-    } catch(e) {
-        loadingEl.classList.remove('show');
-        errorEl.textContent = '❌ Gagal terhubung ke server. Periksa internet.';
+    // CEK APAKAH KODE VALID
+    if (!VALID_LICENSES.includes(code)) {
+        errorEl.textContent = '❌ Kode lisensi tidak valid atau tidak terdaftar.';
         errorEl.classList.add('show');
+        return;
     }
+    
+    // CEK APAKAH SUDAH TERPAKAI
+    if (USED_LICENSES.includes(code)) {
+        errorEl.textContent = '❌ Kode lisensi sudah digunakan oleh guru lain. Setiap kode hanya untuk 1 guru.';
+        errorEl.classList.add('show');
+        return;
+    }
+    
+    // AKTIVASI BERHASIL!
+    // Tambahkan kode ke daftar TERPAKAI (di memori)
+    USED_LICENSES.push(code);
+    
+    const info = {
+        name: name,
+        school: school,
+        code: code,
+        activated: new Date().toISOString(),
+        expiry: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString()
+    };
+    
+    localStorage.setItem('NAFAS_LICENSE_DATA', JSON.stringify(info));
+    localStorage.setItem('NAFAS_LICENSE_USED', code);
+    
+    successEl.textContent = '✅ Aktivasi berhasil! Selamat menggunakan SOSIO DIGITAL NaFaS BK.';
+    successEl.classList.add('show');
+    
+    setTimeout(() => enterApp(info), 1000);
 }
 
 function enterApp(data) {
@@ -335,7 +333,7 @@ function enterApp(data) {
 }
 
 function logout() {
-    if (confirm('Keluar dari aplikasi?')) {
+    if (confirm('Keluar dari aplikasi? Lisensi akan tetap tersimpan.')) {
         document.getElementById('appContainer').classList.remove('active');
         document.getElementById('licenseOverlay').classList.remove('hidden');
         document.getElementById('licenseName').value = '';
@@ -347,7 +345,7 @@ function logout() {
 }
 
 // ============================================================
-// FUNGSI LAINNYA (disingkat karena sudah ada)
+// FUNGSI LAINNYA (SAMA SEPERTI SEBELUMNYA)
 // ============================================================
 
 function showPage(page) {
@@ -450,7 +448,7 @@ async function createSession() {
     
     try {
         const students = names.map((name, i) => ({ id: 'S' + (i + 1), name }));
-        const res = await fetch(SERVER_URL, {
+        const res = await fetch('https://script.google.com/macros/s/AKfycbzHfa62A58BMYKVsBeq_CLV1HLh7S7UdSRfPmntFdGmf3R34-ZpYJcQksT_bJlE1enz/exec', {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
             body: JSON.stringify({ action: 'createSession', school, className, year, counselor, students })
@@ -466,7 +464,7 @@ async function createSession() {
         note('teacherMsg', '✅ Sesi berhasil dibuat! Kode: ' + result.code, 'success');
         loadPaperEntries();
     } catch(e) {
-        note('teacherMsg', '❌ Gagal terhubung ke server.', 'error');
+        note('teacherMsg', '❌ Gagal terhubung ke server. Periksa internet.', 'error');
     }
 }
 
@@ -477,7 +475,7 @@ async function loadStudentPage() {
         return;
     }
     try {
-        const res = await fetch(SERVER_URL, {
+        const res = await fetch('https://script.google.com/macros/s/AKfycbzHfa62A58BMYKVsBeq_CLV1HLh7S7UdSRfPmntFdGmf3R34-ZpYJcQksT_bJlE1enz/exec', {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
             body: JSON.stringify({ action: 'getSession', code })
@@ -545,7 +543,7 @@ async function submitStudent() {
     
     note('studentMsg', '⏳ Mengirim...', 'info');
     try {
-        const res = await fetch(SERVER_URL, {
+        const res = await fetch('https://script.google.com/macros/s/AKfycbzHfa62A58BMYKVsBeq_CLV1HLh7S7UdSRfPmntFdGmf3R34-ZpYJcQksT_bJlE1enz/exec', {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
             body: JSON.stringify({ action: 'submitResponse', code, respondent: me, heart, heartReason: hr, coop, coopReason: cr, lead, leadReason: lr, uncomfortable, uncomfortableReason: ur })
@@ -684,7 +682,7 @@ async function submitPaperEntries() {
         const draft = loadDraft(id);
         if (draft && draft.saved) { saved++; continue; }
         try {
-            const res = await fetch(SERVER_URL, {
+            const res = await fetch('https://script.google.com/macros/s/AKfycbzHfa62A58BMYKVsBeq_CLV1HLh7S7UdSRfPmntFdGmf3R34-ZpYJcQksT_bJlE1enz/exec', {
                 method: 'POST',
                 headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                 body: JSON.stringify({ action: 'submitResponse', code: session.code, respondent: id, heart, heartReason: hr, coop, coopReason: cr, lead, leadReason: lr, uncomfortable, uncomfortableReason: ur })
@@ -725,7 +723,7 @@ async function viewResults() {
     }
     document.getElementById('resultDisplay').innerHTML = '<div class="notif notif-info">⏳ Memuat...</div>';
     try {
-        const res = await fetch(SERVER_URL, {
+        const res = await fetch('https://script.google.com/macros/s/AKfycbzHfa62A58BMYKVsBeq_CLV1HLh7S7UdSRfPmntFdGmf3R34-ZpYJcQksT_bJlE1enz/exec', {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
             body: JSON.stringify({ action: 'getResults', code, pin })
@@ -780,7 +778,7 @@ function printResults() {
 async function refreshStatus() {
     if (!session || !session.code) return;
     try {
-        const res = await fetch(SERVER_URL, {
+        const res = await fetch('https://script.google.com/macros/s/AKfycbzHfa62A58BMYKVsBeq_CLV1HLh7S7UdSRfPmntFdGmf3R34-ZpYJcQksT_bJlE1enz/exec', {
             method: 'POST',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
             body: JSON.stringify({ action: 'getResults', code: session.code, pin: session.pin })
