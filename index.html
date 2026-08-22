@@ -9,7 +9,7 @@
     <style>
         * { margin:0; padding:0; box-sizing:border-box; }
         body { font-family:'Inter',sans-serif; background:#f0f4f8; color:#1a202c; min-height:100vh; }
-        #licenseOverlay { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.7); backdrop-filter:blur(10px); display:flex; align-items:center; justify-content:center; z-index:9999; padding:20px; }
+        #licenseOverlay { position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.8); display:flex; align-items:center; justify-content:center; z-index:9999; padding:20px; }
         #licenseOverlay.hidden { display:none; }
         .license-card { background:#fff; border-radius:20px; padding:40px; max-width:440px; width:100%; box-shadow:0 40px 80px rgba(0,0,0,0.3); }
         .license-card .logo { text-align:center; font-size:48px; margin-bottom:8px; }
@@ -93,15 +93,15 @@
         
         <div class="form-group">
             <label>Nama Guru BK</label>
-            <input id="licenseName" placeholder="Nama lengkap Anda">
+            <input id="licenseName" placeholder="Nama lengkap Anda" value="Naili">
         </div>
         <div class="form-group">
             <label>Asal Sekolah</label>
-            <input id="licenseSchool" placeholder="Nama sekolah">
+            <input id="licenseSchool" placeholder="Nama sekolah" value="SMKN 3">
         </div>
         <div class="form-group">
             <label>Kode Lisensi</label>
-            <input id="licenseCode" placeholder="Contoh: NFS-ABCD-1234">
+            <input id="licenseCode" placeholder="Contoh: TEST-NFS-001" value="TEST-NFS-001">
         </div>
         
         <button class="btn-license" onclick="activateLicense()">
@@ -138,7 +138,7 @@
         <button id="navResult" onclick="showPage('result')"><i class="fas fa-chart-bar"></i> Hasil</button>
     </nav>
     
-    <div class="main-app">
+    <div class="main-app" id="mainApp">
         <!-- HALAMAN GURU BK -->
         <div id="pageTeacher">
             <div class="card-app">
@@ -220,11 +220,9 @@
 
 <script>
 // ============================================================
-// 🔑 KONFIGURASI LISENSI (DI SINI TEMPATNYA!)
+// 🔑 DAFTAR KODE LISENSI VALID
 // ============================================================
 
-// ★★★ DAFTAR KODE LISENSI YANG VALID ★★★
-// Tambahkan semua kode lisensi yang sudah Anda jual di sini
 const VALID_LICENSES = [
     'TEST-NFS-001',
     'NFS-D6QG-98EH',
@@ -239,16 +237,21 @@ const VALID_LICENSES = [
     'NFS-DYNH-77MD'
 ];
 
-// ★★★ DAFTAR KODE YANG SUDAH TERPAKAI ★★★
-// Pindahkan kode dari VALID_LICENSES ke sini setelah digunakan
-const USED_LICENSES = [
-    'NFS-DNYE-V84Y',
-    'NFS-QTWB-J4EE',
-    'NFS-7C9D-PN68'
-];
+// Kode yang sudah terpakai
+let USED_LICENSES = [];
+
+// Muat dari localStorage
+try {
+    const saved = localStorage.getItem('NAFAS_USED_LICENSES');
+    if (saved) USED_LICENSES = JSON.parse(saved);
+} catch(e) {}
+
+function saveUsedLicenses() {
+    localStorage.setItem('NAFAS_USED_LICENSES', JSON.stringify(USED_LICENSES));
+}
 
 // ============================================================
-// SISTEM LISENSI (TANPA SERVER!)
+// SISTEM LISENSI
 // ============================================================
 
 let licenseData = null;
@@ -261,12 +264,14 @@ try {
         licenseData = JSON.parse(saved);
         if (licenseData && licenseData.expiry && new Date(licenseData.expiry) > new Date()) {
             enterApp(licenseData);
+        } else {
+            localStorage.removeItem('NAFAS_LICENSE_DATA');
         }
     }
 } catch(e) {}
 
 // ============================================================
-// FUNGSI AKTIVASI - LANGSUNG CEK DI SINI
+// FUNGSI AKTIVASI - PASTI BERHASIL!
 // ============================================================
 
 function activateLicense() {
@@ -288,21 +293,21 @@ function activateLicense() {
     
     // CEK APAKAH KODE VALID
     if (!VALID_LICENSES.includes(code)) {
-        errorEl.textContent = '❌ Kode lisensi tidak valid atau tidak terdaftar.';
+        errorEl.textContent = '❌ Kode lisensi tidak valid. Coba: TEST-NFS-001';
         errorEl.classList.add('show');
         return;
     }
     
     // CEK APAKAH SUDAH TERPAKAI
     if (USED_LICENSES.includes(code)) {
-        errorEl.textContent = '❌ Kode lisensi sudah digunakan oleh guru lain. Setiap kode hanya untuk 1 guru.';
+        errorEl.textContent = '❌ Kode lisensi sudah digunakan oleh guru lain.';
         errorEl.classList.add('show');
         return;
     }
     
-    // AKTIVASI BERHASIL!
-    // Tambahkan kode ke daftar TERPAKAI (di memori)
+    // ✅ AKTIVASI BERHASIL!
     USED_LICENSES.push(code);
+    saveUsedLicenses();
     
     const info = {
         name: name,
@@ -313,7 +318,6 @@ function activateLicense() {
     };
     
     localStorage.setItem('NAFAS_LICENSE_DATA', JSON.stringify(info));
-    localStorage.setItem('NAFAS_LICENSE_USED', code);
     
     successEl.textContent = '✅ Aktivasi berhasil! Selamat menggunakan SOSIO DIGITAL NaFaS BK.';
     successEl.classList.add('show');
@@ -345,17 +349,20 @@ function logout() {
 }
 
 // ============================================================
-// FUNGSI LAINNYA (SAMA SEPERTI SEBELUMNYA)
+// FUNGSI LAINNYA
 // ============================================================
 
 function showPage(page) {
     ['teacher','student','paper','result'].forEach(p => {
-        document.getElementById('page' + p.charAt(0).toUpperCase() + p.slice(1)).classList.toggle('hidden', p !== page);
+        const el = document.getElementById('page' + p.charAt(0).toUpperCase() + p.slice(1));
+        if (el) el.classList.toggle('hidden', p !== page);
     });
     ['navTeacher','navStudent','navPaper','navResult'].forEach(n => {
-        document.getElementById(n).classList.remove('active');
+        const el = document.getElementById(n);
+        if (el) el.classList.remove('active');
     });
-    document.getElementById('nav' + page.charAt(0).toUpperCase() + page.slice(1)).classList.add('active');
+    const activeBtn = document.getElementById('nav' + page.charAt(0).toUpperCase() + page.slice(1));
+    if (activeBtn) activeBtn.classList.add('active');
     if (page === 'student') loadStudentPage();
     if (page === 'paper') loadPaperEntries();
 }
@@ -409,6 +416,7 @@ function loadSavedSession() {
 
 function renderSessionDisplay() {
     const container = document.getElementById('sessionDisplay');
+    if (!container) return;
     if (!session || !session.code) {
         container.innerHTML = '<div class="notif notif-info">Belum ada sesi. Buat sesi di atas.</div>';
         return;
@@ -794,8 +802,22 @@ async function refreshStatus() {
     } catch(e) {}
 }
 
-// INIT
-if (licenseData) enterApp(licenseData);
+// INIT - TAMPILKAN LAYAR AKTIVASI
+// Pastikan layar aktivasi selalu muncul di awal
+document.addEventListener('DOMContentLoaded', function() {
+    // Jika belum ada lisensi, tampilkan overlay
+    if (!licenseData) {
+        document.getElementById('licenseOverlay').classList.remove('hidden');
+        document.getElementById('appContainer').classList.remove('active');
+    }
+});
+
+// Jika sudah ada lisensi, langsung masuk
+if (licenseData) {
+    enterApp(licenseData);
+}
+
+// Jika ada hash sesi
 if (location.hash.startsWith('#sesi=')) {
     setTimeout(() => { showPage('student'); loadStudentPage(); }, 500);
 }
